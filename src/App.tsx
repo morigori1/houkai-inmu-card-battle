@@ -973,6 +973,9 @@ const EVENTS: CollapseEvent[] = [
   { name: "ンアッー！が114514回木霊する", desc: "TDNの雄叫び。双方シールド-5、熱量+1", run: (g: Game) => { g.p.shield = Math.max(0, g.p.shield - 5); g.c.shield = Math.max(0, g.c.shield - 5); bump(g.p, 1); bump(g.c, 1); } },
   { name: "微粒子レベルで存在している（観測）", desc: "観測した瞬間に実体化。双方1枚ドロー、シールド+4", run: (g: Game) => { draw(g, "p", 1, true); draw(g, "c", 1, true); g.p.shield += 4; g.c.shield += 4; } },
   { name: "お前のものが欲しいとか？（世界）", desc: "世界が欲しがる。双方の手札1枚を交換", run: (g: Game) => { if (g.p.hand.length > 0 && g.c.hand.length > 0) { const pi = rand(g.p.hand.length); const ci = rand(g.c.hand.length); const t = g.p.hand[pi]; if (t && g.c.hand[ci]) { g.p.hand[pi] = g.c.hand[ci]!; g.c.hand[ci] = t; } } } },
+  { name: "汗だくの自販機が爆発した", img: IMG_C_MUGI, desc: "810円の自販機が破裂。双方にHP-8（HP1は残る）", run: (g: Game) => { colHurt(g, "p", 8); colHurt(g, "c", 8); } },
+  { name: "迫真空手部の号令", img: IMG_C_SUMO, desc: "「いいよ！こいよ！」 双方シールド+8", run: (g: Game) => { g.p.shield += 8; g.c.shield += 8; } },
+  { name: "下北沢のセミが「114514」と鳴く", img: IMG_KOKO, desc: FLAVOR, run: (_g: Game) => undefined },
 ];
 
 const EVENTS2: CollapseEvent[] = [
@@ -1566,13 +1569,15 @@ const FX_KEYFRAMES = ["A", "B"].map((s: string) => `@keyframes inmuSh${s}{${SHAK
   + "@keyframes inmuIcon{0%,100%{transform:scale(1)}50%{transform:scale(1.18) rotate(6deg)}}"
   + "@keyframes inmuChap{0%{opacity:0}12%{opacity:1}85%{opacity:1}100%{opacity:0}}"
   + "@keyframes inmuChapText{0%{transform:scale(2.4);letter-spacing:40px;filter:blur(6px)}25%{transform:scale(1);letter-spacing:6px;filter:none}100%{transform:scale(1.06)}}"
-  + "@keyframes inmuZoom{0%{transform:scale(1.35);filter:contrast(1.8) saturate(2) blur(2px)}100%{transform:scale(1);filter:none}}";
+  + "@keyframes inmuZoom{0%{transform:scale(1.35);filter:contrast(1.8) saturate(2) blur(2px)}100%{transform:scale(1);filter:none}}"
+  + "@keyframes inmuDrawFlash{0%{box-shadow:0 0 0 3px #fff3b0,0 0 28px rgba(255,216,74,.95);filter:brightness(1.55)}100%{box-shadow:0 4px 12px rgba(0,0,0,.3);filter:brightness(1)}}";
 
 const STORAGE_KEY_CLEARED = "houkai-inmu-cleared-stages";
+const STORAGE_KEY_CLEARED_CANVAS = "houkai-inmu-cleared";
 
 function loadCleared(): Set<string> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_CLEARED);
+    const raw = localStorage.getItem(STORAGE_KEY_CLEARED) ?? localStorage.getItem(STORAGE_KEY_CLEARED_CANVAS);
     return raw ? new Set<string>(JSON.parse(raw)) : new Set<string>();
   } catch {
     return new Set<string>();
@@ -1595,10 +1600,25 @@ export default function App() {
   const [muted, setMuted] = useState<boolean>(false);
   const [cleared, setCleared] = useState<Set<string>>(() => loadCleared());
   const seen = useRef<Seen>({ ...SEEN0 });
+  const seenHandUids = useRef<Set<number>>(new Set());
+  const [flashUids, setFlashUids] = useState<Set<number>>(new Set());
   const [fx, setFx] = useState<Fx>(FX0);
   const fxSeq = useRef<number>(0);
   const fxTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => { fxTimers.current.forEach((t: ReturnType<typeof setTimeout>) => clearTimeout(t)); }, []);
+
+  useEffect(() => {
+    if (!game) {
+      seenHandUids.current = new Set();
+      return undefined;
+    }
+    const fresh = game.p.hand.filter((i: Inst) => !seenHandUids.current.has(i.uid)).map((i: Inst) => i.uid);
+    seenHandUids.current = new Set(game.p.hand.map((i: Inst) => i.uid));
+    if (fresh.length === 0) return undefined;
+    setFlashUids(new Set(fresh));
+    const t = setTimeout(() => setFlashUids(new Set()), 500);
+    return () => clearTimeout(t);
+  }, [game]);
 
   useEffect(() => {
     if (!game) return undefined;
@@ -1999,6 +2019,7 @@ export default function App() {
               </span>
             ))}
           </div>
+          <div style={{ ...theme.font.label, color: theme.text.tertiary, textAlign: "center" }}>操作: 1-9 / Enter / M / Esc</div>
           <div style={{ ...theme.font.label, color: theme.text.tertiary }}>カード{ALL_CARDS.length}種／崩壊イベント{EVENTS.length}種＋神性汚染イベント{EVENTS2.length}種／全{STAGES.length}戦／効果音はすべてブラウザ内で合成</div>
           <div style={{ ...theme.font.label, color: theme.text.tertiary }}>{IMG_CREDIT}</div>
           <div style={{ ...theme.font.label, color: theme.text.tertiary }}>{IMG_CREDIT2}</div>
@@ -2262,6 +2283,7 @@ export default function App() {
               const cut = cost < Math.max(0, d.cost + costShift(g));
               const ok = g.phase === "player" && cost <= g.p.energy;
               const selected = sel === i.uid;
+              const drawing = flashUids.has(i.uid);
               return (
                 <div
                   key={i.uid}
@@ -2269,6 +2291,7 @@ export default function App() {
                   tabIndex={0}
                   onClick={() => pickCard(i.uid)}
                   onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => onCardKey(e, i.uid)}
+                  className={drawing ? "drawFlash" : undefined}
                   style={{
                     flex: "1 1 170px", maxWidth: 260, borderRadius: 12, overflow: "hidden",
                     border: `${selected ? 3 : 2}px solid transparent`,
@@ -2276,6 +2299,7 @@ export default function App() {
                     opacity: ok || g.phase !== "player" ? 1 : 0.5, transition: theme.motion.hover,
                     transform: selected ? "translateY(-6px) scale(1.04)" : "none",
                     boxShadow: chainHint && ok ? `0 0 0 2px ${kindColor(d.kind)}, 0 0 22px ${kindColor(d.kind)}` : selected ? "0 0 0 1px #ffd84a, 0 0 24px rgba(255,200,60,0.7), 0 10px 20px rgba(0,0,0,0.4)" : "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)",
+                    animation: drawing ? "inmuDrawFlash 0.5s ease-out" : undefined,
                   }}
                 >
                   {CARD_ART[d.key] ? <div style={{ height: 72, backgroundImage: `linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.55)), url(${CARD_ART[d.key]})`, backgroundSize: "cover", backgroundPosition: "center 30%", borderBottom: `3px solid ${kindColor(d.kind)}` }} /> : <div style={{ height: 8, background: `linear-gradient(90deg, ${kindColor(d.kind)}, #ffd84a, ${kindColor(d.kind)})`, boxShadow: `0 0 10px ${kindColor(d.kind)}` }} />}
@@ -2303,7 +2327,7 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
               <button disabled={!selPlayable} onClick={playSelected} style={{padding:"10px 20px",background:"#d4af37",color:"#1a1511",border:"none",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>{selDef ? `【${selDef.name}】を出す` : "カードを選んでね（あくしろよ）"}</button>
-              <button onClick={pass} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{g.p.played === 0 ? "ターン終了（パス：1枚ドロー＋HP3＋熱量1）" : g.p.energy > 0 ? "ターン終了（余り気力→熱量+1）" : "ターン終了"}</button>
+              <button onClick={pass} aria-label="ターン終了" style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{g.p.played === 0 ? "ターン終了（パス：1枚ドロー＋HP3＋熱量1）" : g.p.energy > 0 ? "ターン終了（余り気力→熱量+1）" : "ターン終了"}</button>
               <button disabled={g.p.heat < 3} onClick={() => heatAct("kiai")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>迫真の気合（熱量3→気力+1）</button>
               <button disabled={g.p.heat < HEAT_MAX || g.p.awaken} onClick={() => heatAct("awaken")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>野獣覚醒（熱量5→次の攻撃×2・貫通）</button>
               {selDef && !selPlayable ? <span style={{ ...theme.font.label, color: theme.text.warning }}>気力が足りない（そんな装備で大丈夫か？）</span> : null}
