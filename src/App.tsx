@@ -210,6 +210,7 @@ interface Game {
   result: "win" | "lose" | "draw" | null; last: LastCollapse | null; uid: number;
   playSeq: number; playKind: Kind | null;
   stage: number; chapter: 1 | 2; san: number; star: number; fc: number;
+  pile?: string[];
 }
 interface Stage { chapter: 1 | 2; code: string; area: string; enemy: string; hp: number; power: number; boss: boolean; tiles: string[]; intro: string[]; win: string[]; pic?: string | undefined }
 interface Scene { tag: string; title: string; lines: string[]; img: "title" | "hero" | "collapse"; eldritch: boolean; pic?: string | undefined }
@@ -786,7 +787,7 @@ function energyMax(g: Game): number { return BASE_ENERGY + (has(g, "energyUp") ?
 
 function cloneF(f: Fighter): Fighter { return { ...f, hand: f.hand.slice(), deck: f.deck.slice() }; }
 function cloneG(g: Game): Game {
-  return { ...g, p: cloneF(g.p), c: cloneF(g.c), mods: g.mods.map((m: Mod) => ({ ...m })), tiles: g.tiles.map((t: Tile) => ({ ...t })), log: g.log.slice(), clog: g.clog.slice(), last: g.last ? { ...g.last } : null };
+  return { ...g, p: cloneF(g.p), c: cloneF(g.c), mods: g.mods.map((m: Mod) => ({ ...m })), tiles: g.tiles.map((t: Tile) => ({ ...t })), log: g.log.slice(), clog: g.clog.slice(), last: g.last ? { ...g.last } : null, pile: (g.pile ?? []).slice() };
 }
 
 function log(g: Game, who: Who, text: string): void {
@@ -976,6 +977,8 @@ const EVENTS: CollapseEvent[] = [
   { name: "汗だくの自販機が爆発した", img: IMG_C_MUGI, desc: "810円の自販機が破裂。双方にHP-8（HP1は残る）", run: (g: Game) => { colHurt(g, "p", 8); colHurt(g, "c", 8); } },
   { name: "迫真空手部の号令", img: IMG_C_SUMO, desc: "「いいよ！こいよ！」 双方シールド+8", run: (g: Game) => { g.p.shield += 8; g.c.shield += 8; } },
   { name: "下北沢のセミが「114514」と鳴く", img: IMG_KOKO, desc: FLAVOR, run: (_g: Game) => undefined },
+  { name: "屋上で日焼けしてた（焼いてかない？）", img: IMG_TDN, desc: "いい天気だ。田所HP+5、熱量+1", run: (g: Game) => { healRaw(g, "p", 5); bump(g.p, 1); } },
+  { name: "アイスティーしかなかったけどいいかな？", img: IMG_KOKO, desc: "睡魔が来る。敵の熱量-2、田所シールド+4", run: (g: Game) => { g.c.heat = Math.max(0, g.c.heat - 2); g.p.shield += 4; } },
 ];
 
 const EVENTS2: CollapseEvent[] = [
@@ -1108,6 +1111,7 @@ function playCard(g: Game, side: Side, uid: number): void {
   else { f.chain = 1; f.chainKind = d.kind; }
   f.lastKey = d.key;
   f.played++;
+  if (side === "p") g.pile = [...(g.pile ?? []), d.name].slice(-3);
   const ch = f.chain;
   const cb = ch >= 2 ? ch - 1 : 0;
   g.playSeq++;
@@ -1406,6 +1410,29 @@ function intentOf(g: Game): string {
   if (aff.length > 0) return `${KIND_LABEL[cardOf((aff[0] as Inst).key).kind]}の気配（攻めどき。見とけよ見とけよ〜）${heat}`;
   return `様子見の構え（しょうがねぇなぁ）${heat}`;
 }
+function threatOf(g: Game): { dmg: number } {
+  const f = g.c;
+  const o = g.p;
+  let best = 0;
+  f.hand.forEach((i: Inst) => {
+    if (costOf(g, cardOf(i.key), "c") > f.energy) return;
+    const est = estimate(g, i.key);
+    if (est <= 0) return;
+    const d = cardOf(i.key);
+    const cb = d.kind === "atk" && f.chainKind === "atk" && f.chain >= 1 ? f.chain : 0;
+    const hits = i.key === "horahora" ? 4 : i.key === "sannin" ? 3 : 1;
+    let v = (est + cb * 4 + f.power * hits) * f.mult * (f.awaken ? 2 : 1) * (f.weak > 0 ? 0.6 : 1) * (o.vuln > 0 ? 1.5 : 1);
+    if (has(g, "halfAtk")) v *= 0.5;
+    if (has(g, "dmgDouble")) v *= 2;
+    if (g.endless) v *= 1.5;
+    if (o.parry > 0) v *= 0.5;
+    const pierce = i.key === "karate" || (i.key === "baka" && f.hp <= o.hp) || f.awaken || (i.key === "gankou" && f.heat >= 4);
+    const raw = Math.max(1, Math.round(v));
+    const dealt = pierce ? raw : Math.max(0, raw - o.shield);
+    if (dealt > best) best = dealt;
+  });
+  return { dmg: best };
+}
 const STAGE_TIPS: Record<string, string> = {
   "1-1": "戦術：序盤は筋トレで気力を貯金→次ラウンドに大技。ファッ！？を連打で連鎖を稼げ",
   "1-2": "戦術：相手の大技予告が出たら受け流し。余った気力は熱量へ。いいよ！こいよ！",
@@ -1428,7 +1455,7 @@ function newGame(si: number): Game {
     phase: "player", round: 0, p: blank("田所浩二"), c: blank(st.enemy, st.hp), mods: [],
     tiles: st.tiles.map((n: string) => ({ name: n, alive: true })), log: [], clog: [], boost: 0,
     endless: false, collapses: 0, result: null, last: null, uid: 0, playSeq: 0, playKind: null,
-    stage: si, chapter: st.chapter, san: 100, star: 0, fc: 0,
+    stage: si, chapter: st.chapter, san: 100, star: 0, fc: 0, pile: [],
   };
   g.fc = rand(evList(g).length);
   g.c.power = st.power;
@@ -1574,6 +1601,10 @@ const FX_KEYFRAMES = ["A", "B"].map((s: string) => `@keyframes inmuSh${s}{${SHAK
 
 const STORAGE_KEY_CLEARED = "houkai-inmu-cleared-stages";
 const STORAGE_KEY_CLEARED_CANVAS = "houkai-inmu-cleared";
+const MUTE_KEY = "houkai-inmu-muted";
+function loadMuted(): boolean {
+  try { return localStorage.getItem(MUTE_KEY) === "1"; } catch { return false; }
+}
 
 function loadCleared(): Set<string> {
   try {
@@ -1597,7 +1628,10 @@ export default function App() {
   const [game, setGame] = useState<Game | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: "title" });
   const [sel, setSel] = useState<number | null>(null);
-  const [muted, setMuted] = useState<boolean>(false);
+  const [muted, setMuted] = useState<boolean>(() => { const m = loadMuted(); sfxMuted = m; return m; });
+  const [pileOpen, setPileOpen] = useState(false);
+  const [heatToast, setHeatToast] = useState<string | null>(null);
+  useEffect(() => { if (!heatToast) return undefined; const t = setTimeout(() => setHeatToast(null), 1600); return () => clearTimeout(t); }, [heatToast]);
   const [cleared, setCleared] = useState<Set<string>>(() => loadCleared());
   const seen = useRef<Seen>({ ...SEEN0 });
   const seenHandUids = useRef<Set<number>>(new Set());
@@ -1703,6 +1737,7 @@ export default function App() {
     }
     const heatP = game.p.heat >= HEAT_MAX && s.pheat < HEAT_MAX;
     const heatC = game.c.heat >= HEAT_MAX && s.cheat < HEAT_MAX;
+    if (game.p.heat >= 3 && game.p.heat < HEAT_MAX && s.pheat < 3) setHeatToast("熱量が上がったぜ…（気合いけるやん）");
     if ((heatP || heatC) && !bText) { bText = heatP ? "熱量MAX！ いいぞもっとやれ" : `${game.c.name}の熱量MAX（あっ、やばい）`; bColor = hot; flash(hitAt + 120, hot); at(hitAt + 120, () => sfx("hype")); }
     const chP = game.p.chain >= 2 && game.p.chain > s.pch;
     const chC = game.c.chain >= 2 && game.c.chain > s.cch;
@@ -1751,10 +1786,22 @@ export default function App() {
     setMuted((m: boolean) => {
       const next = !m;
       sfxMuted = next;
+      try { localStorage.setItem(MUTE_KEY, next ? "1" : "0"); } catch { /* ignore */ }
       if (!next) { getCtx(); sfx("pass"); }
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    if (!pileOpen) return undefined;
+    const onEsc = (e: Event): void => {
+      if (!(e instanceof KeyboardEvent) || e.key !== "Escape") return;
+      e.preventDefault();
+      setPileOpen(false);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [pileOpen]);
 
   useEffect(() => {
     if (screen.kind !== "battle" || !game || game.phase !== "player") return undefined;
@@ -1801,6 +1848,7 @@ export default function App() {
         toggleMute();
       } else if (key === "Escape") {
         e.preventDefault();
+        setPileOpen(false);
         setSel(null);
       }
     };
@@ -1814,6 +1862,8 @@ export default function App() {
     seen.current = { ...SEEN0 };
     setFx(FX0);
     setSel(null);
+    setPileOpen(false);
+    setHeatToast(null);
     setGame(newGame(si));
     setScreen({ kind: "battle" });
   }, []);
@@ -2053,6 +2103,8 @@ export default function App() {
   const ws = fx.wrap ? (fx.wrap.k % 2 === 0 ? "A" : "B") : "";
   const wrapAnim = !fx.wrap ? undefined : fx.wrap.type === "soft" ? `inmuSh${ws} 0.35s ease-out` : fx.wrap.type === "hard" ? `inmuSt${ws} 0.11s steps(1), inmuHd${ws} 0.5s ease-out 0.11s` : `inmuGl${ws} 0.9s steps(8, end)`;
   const auraOf = (f: Fighter, c: string): string | undefined => (f.awaken || f.heat >= HEAT_MAX ? theme.dataviz.negative : f.chain >= 3 ? c : undefined);
+  const threat = threatOf(g);
+  const lethalThreat = threat.dmg >= g.p.hp && threat.dmg > 0;
 
   return (
     <div style={{ ...root, position: "relative", overflow: "hidden", animation: wrapAnim }}>
@@ -2197,6 +2249,12 @@ export default function App() {
             <div style={{ color: theme.text.primary }}>{intentOf(g)}</div>
           </div>
           <div style={{ ...theme.font.label }}>
+            <div style={{ color: theme.text.tertiary, marginBottom: 4 }}>被弾予測（敵の次の一撃・最大）</div>
+            <div style={{ fontWeight: 700, color: lethalThreat ? theme.dataviz.red : theme.text.primary, ...(lethalThreat ? ({ borderRadius: 6, padding: "2px 6px", animation: "inmuAura 0.8s ease-in-out infinite", "--aura": theme.dataviz.negative } as unknown as CSSProperties) : {}) }}>
+              {threat.dmg > 0 ? `約${threat.dmg}` : "攻撃札なし"}{lethalThreat ? "　致死圏！ 盾か受け流しを（まずいですよ！）" : threat.dmg > 0 ? `　→ 残りHP ${g.p.hp - threat.dmg}` : "（攻めどき）"}
+            </div>
+          </div>
+          <div style={{ ...theme.font.label }}>
             <div style={{ color: theme.text.tertiary, marginBottom: 4 }}>熱量ゲージ</div>
             <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
               <span style={{ color: theme.text.primary }}>野獣: {g.p.heat}/{HEAT_MAX}</span>
@@ -2329,6 +2387,16 @@ export default function App() {
               <button disabled={!selPlayable} onClick={playSelected} style={{padding:"10px 20px",background:"#d4af37",color:"#1a1511",border:"none",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>{selDef ? `【${selDef.name}】を出す` : "カードを選んでね（あくしろよ）"}</button>
               <button onClick={pass} aria-label="ターン終了" style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{g.p.played === 0 ? "ターン終了（パス：1枚ドロー＋HP3＋熱量1）" : g.p.energy > 0 ? "ターン終了（余り気力→熱量+1）" : "ターン終了"}</button>
               <button disabled={g.p.heat < 3} onClick={() => heatAct("kiai")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>迫真の気合（熱量3→気力+1）</button>
+              <span style={{ position: "relative", display: "inline-flex" }}>
+                <button onClick={() => setPileOpen((o: boolean) => !o)} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>捨て札（{(g.pile ?? []).length}）</button>
+                {pileOpen ? (
+                  <div role="dialog" aria-label="直近の捨て札" onClick={() => setPileOpen(false)} style={{ position: "absolute", bottom: "110%", left: 0, zIndex: 40, minWidth: 200, padding: "8px 10px", borderRadius: 8, border: "1px solid #665533", background: "#1a1511", color: "#f8e8a0", cursor: "pointer", fontSize: 13 }}>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>直近の捨て札（タップ/Escで閉じる）</div>
+                    {(g.pile ?? []).length === 0 ? <div>まだ何も出してない（あくしろよ）</div> : [...(g.pile ?? [])].reverse().map((n: string, i: number) => <div key={i}>{i + 1}. 【{n}】</div>)}
+                  </div>
+                ) : null}
+              </span>
+              {heatToast ? <span role="status" style={{ ...theme.font.label, color: "#ff5a1f", fontWeight: 700 }}>{heatToast}</span> : null}
               <button disabled={g.p.heat < HEAT_MAX || g.p.awaken} onClick={() => heatAct("awaken")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>野獣覚醒（熱量5→次の攻撃×2・貫通）</button>
               {selDef && !selPlayable ? <span style={{ ...theme.font.label, color: theme.text.warning }}>気力が足りない（そんな装備で大丈夫か？）</span> : null}
             </div>
