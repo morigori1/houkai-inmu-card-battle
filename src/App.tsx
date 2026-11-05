@@ -958,6 +958,9 @@ const EVENTS: CollapseEvent[] = [
   { name: "淫夢辞典のページ数が114514に増えた", desc: FLAVOR, run: (_g: Game) => undefined },
   { name: "どこかで「†悔い改めて†」の声", desc: FLAVOR, run: (_g: Game) => undefined },
   { name: "下北沢駅のアナウンス「ありますあります」", desc: FLAVOR, run: (_g: Game) => undefined },
+  { name: "汗だくの自販機が爆発した", img: IMG_C_MUGI, desc: "810円の自販機が爆発！ 双方HP-8（HP1は残る）", run: (g: Game) => { colHurt(g, "p", 8); colHurt(g, "c", 8); } },
+  { name: "迫真空手部の号令", desc: "「押忍！押忍！」 気合が入った。双方シールド+8", run: (g: Game) => { g.p.shield += 8; g.c.shield += 8; } },
+  { name: "下北沢のセミが「114514」と鳴く", desc: FLAVOR, run: (_g: Game) => undefined },
 ];
 
 const EVENTS2: CollapseEvent[] = [
@@ -1928,6 +1931,7 @@ export default function App() {
             ))}
           </div>
           <div style={{ ...theme.font.heading1, ...neon, fontSize: "clamp(30px, 7vw, 54px)", lineHeight: 1.1, textAlign: "center" }}>崩壊淫夢カードバトル<div style={{ fontSize: "0.5em", marginTop: 4 }}>〜灼熱の夏の暑い日〜</div></div>
+          <div style={{ ...theme.font.label, color: theme.text.secondary, textAlign: "center", marginTop: 8 }}>操作: 1-9 / Enter / M / Esc</div>
           <div style={{ ...theme.font.heading3, fontWeight: theme.weight.semibold, color: theme.text.danger }}>王道を征く！ こ↑こ↓から始まる、114514℃の語録決戦（迫真）</div>
           <div style={sub}>ムシムシの下北沢、汗だくの灼熱屋上、麦茶はもうぬるい。俺、田所浩二（24歳、学生）。毎ターン崩れていく下北沢を抜け、古き神々に汚染されたミームの島々を、語録のカードで殴り渡る。いいよ！こいよ！ そんな装備で大丈夫か？「大丈夫だ、問題ない（大嘘）」 下北沢、まずうちさぁ屋上、迫真空手部、アイスティーの屋上、王道を征くソープ系迷宮、そして無限の先輩の家——聖地を巡り、TDN・野獣大先輩を倒せ。乱入するDB・KBTITにも注意。オッスお願いしまーす！</div>
           <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -2211,6 +2215,7 @@ export default function App() {
                     opacity: ok || g.phase !== "player" ? 1 : 0.5, transition: theme.motion.hover,
                     transform: selected ? "translateY(-6px) scale(1.04)" : "none",
                     boxShadow: chainHint && ok ? `0 0 0 2px ${kindColor(d.kind)}, 0 0 22px ${kindColor(d.kind)}` : selected ? "0 0 0 1px #ffd84a, 0 0 24px rgba(255,200,60,0.7), 0 10px 20px rgba(0,0,0,0.4)" : "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)",
+                    animation: "drawFlash 0.5s ease-out",
                   }}
                 >
                   {CARD_ART[d.key] ? <div style={{ height: 72, backgroundImage: `linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.55)), url(${CARD_ART[d.key]})`, backgroundSize: "cover", backgroundPosition: "center 30%", borderBottom: `3px solid ${kindColor(d.kind)}` }} /> : <div style={{ height: 8, background: `linear-gradient(90deg, ${kindColor(d.kind)}, #ffd84a, ${kindColor(d.kind)})`, boxShadow: `0 0 10px ${kindColor(d.kind)}` }} />}
@@ -2237,7 +2242,7 @@ export default function App() {
         {g.phase === "player" ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 12 }}>
             <button disabled={!selPlayable} onClick={playSelected} style={{padding:"10px 20px",background:"#d4af37",color:"#1a1511",border:"none",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>{selDef ? `【${selDef.name}】を出す` : "カードを選んでね（あくしろよ）"}</button>
-            <button onClick={pass} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{g.p.played === 0 ? "ターン終了（パス：1枚ドロー＋HP3＋熱量1）" : g.p.energy > 0 ? "ターン終了（余り気力→熱量+1）" : "ターン終了"}</button>
+            <button onClick={pass} aria-label="ターン終了" style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{g.p.played === 0 ? "ターン終了（パス：1枚ドロー＋HP3＋熱量1）" : g.p.energy > 0 ? "ターン終了（余り気力→熱量+1）" : "ターン終了"}</button>
             <button disabled={g.p.heat < 3} onClick={() => heatAct("kiai")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>迫真の気合（熱量3→気力+1）</button>
             <button disabled={g.p.heat < HEAT_MAX || g.p.awaken} onClick={() => heatAct("awaken")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>野獣覚醒（熱量5→次の攻撃×2・貫通）</button>
             {selDef && !selPlayable ? <span style={{ ...theme.font.label, color: theme.text.warning }}>気力が足りない（そんな装備で大丈夫か？）</span> : null}

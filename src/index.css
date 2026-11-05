@@ -38,6 +38,12 @@ body {
   100% { transform: scale(1) rotate(0deg); }
 }
 
+@keyframes drawFlash {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+  100% { transform: scale(1); opacity: 1; box-shadow: none; }
+}
+
 .shake {
   animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
 }
