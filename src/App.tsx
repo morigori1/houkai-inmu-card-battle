@@ -464,6 +464,13 @@ const CARDS: CardDef[] = [
   { key: "mazui", name: "まずいですよ！", kind: "def", cost: 1, text: "シールド+10、次のターン相手の攻撃力-3", flavor: "KMRの危機察知能力。まずいですよ！", copies: 2 },
   { key: "oraora", name: "オラオラ来いよオラァ！", kind: "atk", cost: 2, text: "16ダメージ。自分のシールドが15以上なら貫通", flavor: "挑発からの全力攻撃。胸板が厚いほど強気", copies: 1 },
   { key: "yurusane", name: "もう許さねぇからなぁ？", kind: "chaos", cost: 2, text: "相手に18ダメージ、世界崩壊+1、自分のHP-6", flavor: "怒りの代償。全てを巻き込む覚悟の一撃", copies: 1 },
+  { key: "sugoi", name: "すっごい綺麗…", kind: "heal", cost: 1, text: "HP+9、次の攻撃×1.2", flavor: "夕日を見上げる純粋な一言。心が洗われる", copies: 1 },
+  { key: "ichinichi", name: "1日…350円！", kind: "def", cost: 1, text: "シールド+11、気力+1（次ラウンド）", flavor: "激安駐車場でコストパフォーマンス抜群", copies: 1 },
+  { key: "iikana", name: "いいかな？（念押し）", kind: "meme", cost: 1, text: "相手を弱体2R、1枚ドロー", flavor: "確認という名の圧力。断る選択肢はない", copies: 1 },
+  { key: "ariari", name: "ありますあります", kind: "heal", cost: 1, text: "HP+8、1枚ドロー", flavor: "自販機の不思議な返事。ありますあります（反復）", copies: 1 },
+  { key: "ryukou", name: "流行らせコラ！", kind: "meme", cost: 2, text: "次の攻撃×1.8、熱量+1", flavor: "無理矢理でも流行らせる意志の力", copies: 1 },
+  { key: "kuun", name: "クゥーン…", kind: "def", cost: 1, text: "シールド+7、相手の攻撃力-1", flavor: "カラスの鳴き声。なぜか相手が弱る", copies: 1 },
+  { key: "bishi", name: "微粒子レベルで存在している", kind: "meme", cost: 1, text: "1枚ドロー、次の防御×1.3", flavor: "観測するまで存在しない（量子淫夢論）", copies: 1 },
 ];
 
 const CARDS2: CardDef[] = [
@@ -958,6 +965,14 @@ const EVENTS: CollapseEvent[] = [
   { name: "淫夢辞典のページ数が114514に増えた", desc: FLAVOR, run: (_g: Game) => undefined },
   { name: "どこかで「†悔い改めて†」の声", desc: FLAVOR, run: (_g: Game) => undefined },
   { name: "下北沢駅のアナウンス「ありますあります」", desc: FLAVOR, run: (_g: Game) => undefined },
+  { name: "語録の限界集合", desc: "はっきりわかんだね。両者の連鎖がリセットされ、熱量+1", run: (g: Game) => { g.p.chain = 0; g.p.chainKind = null; g.c.chain = 0; g.c.chainKind = null; bump(g.p, 1); bump(g.c, 1); } },
+  { name: "黒塗りの高級車が急ブレーキ", desc: "バァン！ 衝撃で両者HP-7、シールド半減（HP1は残る）", run: (g: Game) => { colHurt(g, "p", 7); colHurt(g, "c", 7); g.p.shield = Math.floor(g.p.shield / 2); g.c.shield = Math.floor(g.c.shield / 2); } },
+  { name: "810円の自販機が出現", desc: "お釣りはない（迫真）。次のラウンド、カードコスト-1", run: (g: Game) => addMod(g, "costDown", 1, "コスト-1") },
+  { name: "流行らせコラ！（世界の催促）", desc: "世界が流行を強制。双方の攻撃力+1（永続）", run: (g: Game) => { g.p.power += 1; g.c.power += 1; } },
+  { name: "ありますあります（自販機の答え）", desc: "自販機が2つ答えた。双方HP+5、1枚ドロー", run: (g: Game) => { healRaw(g, "p", 5); healRaw(g, "c", 5); draw(g, "p", 1, true); draw(g, "c", 1, true); } },
+  { name: "ンアッー！が114514回木霊する", desc: "TDNの雄叫び。双方シールド-5、熱量+1", run: (g: Game) => { g.p.shield = Math.max(0, g.p.shield - 5); g.c.shield = Math.max(0, g.c.shield - 5); bump(g.p, 1); bump(g.c, 1); } },
+  { name: "微粒子レベルで存在している（観測）", desc: "観測した瞬間に実体化。双方1枚ドロー、シールド+4", run: (g: Game) => { draw(g, "p", 1, true); draw(g, "c", 1, true); g.p.shield += 4; g.c.shield += 4; } },
+  { name: "お前のものが欲しいとか？（世界）", desc: "世界が欲しがる。双方の手札1枚を交換", run: (g: Game) => { if (g.p.hand.length > 0 && g.c.hand.length > 0) { const pi = rand(g.p.hand.length); const ci = rand(g.c.hand.length); const t = g.p.hand[pi]; if (t && g.c.hand[ci]) { g.p.hand[pi] = g.c.hand[ci]!; g.c.hand[ci] = t; } } } },
 ];
 
 const EVENTS2: CollapseEvent[] = [
@@ -1553,12 +1568,32 @@ const FX_KEYFRAMES = ["A", "B"].map((s: string) => `@keyframes inmuSh${s}{${SHAK
   + "@keyframes inmuChapText{0%{transform:scale(2.4);letter-spacing:40px;filter:blur(6px)}25%{transform:scale(1);letter-spacing:6px;filter:none}100%{transform:scale(1.06)}}"
   + "@keyframes inmuZoom{0%{transform:scale(1.35);filter:contrast(1.8) saturate(2) blur(2px)}100%{transform:scale(1);filter:none}}";
 
+const STORAGE_KEY_CLEARED = "houkai-inmu-cleared-stages";
+
+function loadCleared(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CLEARED);
+    return raw ? new Set<string>(JSON.parse(raw)) : new Set<string>();
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function saveCleared(cleared: Set<string>): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_CLEARED, JSON.stringify([...cleared]));
+  } catch {
+    // ignore
+  }
+}
+
 export default function App() {
   const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
   const [game, setGame] = useState<Game | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: "title" });
   const [sel, setSel] = useState<number | null>(null);
   const [muted, setMuted] = useState<boolean>(false);
+  const [cleared, setCleared] = useState<Set<string>>(() => loadCleared());
   const seen = useRef<Seen>({ ...SEEN0 });
   const [fx, setFx] = useState<Fx>(FX0);
   const fxSeq = useRef<number>(0);
@@ -1741,11 +1776,17 @@ export default function App() {
           if (!checkEnd(g)) g.phase = "cpu";
           return g;
         });
+      } else if (key === "m" || key === "M") {
+        e.preventDefault();
+        toggleMute();
+      } else if (key === "Escape") {
+        e.preventDefault();
+        setSel(null);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [screen, game, sel]);
+  }, [screen, game, sel, toggleMute]);
 
   const startStage = useCallback((si: number): void => {
     getCtx();
@@ -1767,6 +1808,17 @@ export default function App() {
   const retry = useCallback((): void => { if (game) startStage(game.stage); }, [game, startStage]);
   const goNext = useCallback((): void => {
     if (!game) return;
+    if (game.result === "win") {
+      const stageCode = STAGES[game.stage]?.code;
+      if (stageCode) {
+        setCleared((prev: Set<string>) => {
+          const next = new Set(prev);
+          next.add(stageCode);
+          saveCleared(next);
+          return next;
+        });
+      }
+    }
     const a = scenesAfter(game.stage);
     openStory(a.scenes, a.next);
   }, [game, openStory]);
@@ -1880,7 +1932,12 @@ export default function App() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <button onClick={() => openStory(scenesBefore(firstOf(ch), false), firstOf(ch))} style={{background:theme.accent,color:theme.bg,border:"none",padding:"8px 16px",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>章のはじめから</button>
                 {STAGES.map((s: Stage, i: number) => (s.chapter === ch ? (
-                  <span key={s.code}><button onClick={() => openStory(scenesBefore(i, true), i)} style={{padding:"8px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{`${s.code} ${s.enemy}`}</button></span>
+                  <span key={s.code}>
+                    <button onClick={() => openStory(scenesBefore(i, true), i)} style={{padding:"8px",background:cleared.has(s.code)?"#44cc44":"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer",position:"relative"}}>
+                      {`${s.code} ${s.enemy}`}
+                      {cleared.has(s.code) ? <span style={{position:"absolute",top:"-2px",right:"-2px",fontSize:"16px"}}>✓</span> : null}
+                    </button>
+                  </span>
                 ) : null))}
               </div>
             </div>
@@ -2028,9 +2085,17 @@ export default function App() {
               {g.result === "win" ? `${g.c.name}を撃破。崩壊${g.collapses}回の淫夢を生き延びた。いいゾ〜これ` : g.result === "lose" ? `${g.round}ラウンド目、田所浩二は崩れゆく淫夢に沈んだ。ダメみたいですね（諦観）` : "あーもう滅茶苦茶だよ"}
               {g.result === "win" ? `　${RESULT_WIN[g.collapses % RESULT_WIN.length] ?? ""}` : g.result === "lose" ? `　${RESULT_LOSE[g.round % RESULT_LOSE.length] ?? ""}` : ""}
             </div>
+            {g.result === "win" ? (
+              <div style={{ ...theme.font.label, color: theme.text.secondary, display: "flex", flexWrap: "wrap", gap: "8px 16px", padding: "8px 0" }}>
+                <span>ラウンド数: {g.round}</span>
+                <span>崩壊回数: {g.collapses}</span>
+                <span>出札枚数: {g.p.played}</span>
+                <span>捨札枚数: {g.p.disc}</span>
+              </div>
+            ) : null}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {g.result === "win" ? (
-                <button onClick={goNext} style={{padding:"10px 20px",background:"#d4af37",color:"#1a1511",border:"none",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>{STAGES[g.stage + 1] ? "物語を進める" : "エンディングへ"}</button>
+                <button onClick={goNext} style={{padding:"10px 20px",background:"#d4af37",color:"#1a1511",border:"none",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>{STAGES[g.stage + 1] ? "次の章へ ▶（物語を進める）" : "エンディングへ"}</button>
               ) : (
                 <button onClick={retry} style={{background:theme.accent,color:theme.bg,border:"none",padding:"8px 16px",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>再戦する</button>
               )}
@@ -2235,12 +2300,17 @@ export default function App() {
           <div style={sub}>手札が全部消えた。ファッ！？ パスして引き直そう（しょうがねぇなぁ）</div>
         )}
         {g.phase === "player" ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 12 }}>
-            <button disabled={!selPlayable} onClick={playSelected} style={{padding:"10px 20px",background:"#d4af37",color:"#1a1511",border:"none",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>{selDef ? `【${selDef.name}】を出す` : "カードを選んでね（あくしろよ）"}</button>
-            <button onClick={pass} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{g.p.played === 0 ? "ターン終了（パス：1枚ドロー＋HP3＋熱量1）" : g.p.energy > 0 ? "ターン終了（余り気力→熱量+1）" : "ターン終了"}</button>
-            <button disabled={g.p.heat < 3} onClick={() => heatAct("kiai")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>迫真の気合（熱量3→気力+1）</button>
-            <button disabled={g.p.heat < HEAT_MAX || g.p.awaken} onClick={() => heatAct("awaken")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>野獣覚醒（熱量5→次の攻撃×2・貫通）</button>
-            {selDef && !selPlayable ? <span style={{ ...theme.font.label, color: theme.text.warning }}>気力が足りない（そんな装備で大丈夫か？）</span> : null}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+              <button disabled={!selPlayable} onClick={playSelected} style={{padding:"10px 20px",background:"#d4af37",color:"#1a1511",border:"none",borderRadius:"4px",fontSize:"18px",fontWeight:"bold",cursor:"pointer"}}>{selDef ? `【${selDef.name}】を出す` : "カードを選んでね（あくしろよ）"}</button>
+              <button onClick={pass} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>{g.p.played === 0 ? "ターン終了（パス：1枚ドロー＋HP3＋熱量1）" : g.p.energy > 0 ? "ターン終了（余り気力→熱量+1）" : "ターン終了"}</button>
+              <button disabled={g.p.heat < 3} onClick={() => heatAct("kiai")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>迫真の気合（熱量3→気力+1）</button>
+              <button disabled={g.p.heat < HEAT_MAX || g.p.awaken} onClick={() => heatAct("awaken")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>野獣覚醒（熱量5→次の攻撃×2・貫通）</button>
+              {selDef && !selPlayable ? <span style={{ ...theme.font.label, color: theme.text.warning }}>気力が足りない（そんな装備で大丈夫か？）</span> : null}
+            </div>
+            <div style={{ ...theme.font.caption, color: theme.text.tertiary, paddingTop: 4 }}>
+              キーボード： 1-9 カード選択・出す ／ Enter/Space ターン終了 ／ M ミュート ／ Esc 選択解除
+            </div>
           </div>
         ) : null}
       </div>
