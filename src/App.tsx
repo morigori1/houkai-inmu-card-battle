@@ -962,6 +962,7 @@ const EVENTS: CollapseEvent[] = [
   { name: "地形: アイスティーの屋上", img: IMG_OMATASE, desc: "「おまたせ！アイスティーしかなかったけどいいかな？」 敵が飲んで眠くなった（次R気力-2）", run: (g: Game) => { g.c.stun = 1; } },
   { name: "甥のKMR、加速します", img: IMG_KMR, desc: "下北沢を全力疾走。次のラウンド気力+1", run: (g: Game) => addMod(g, "energyUp", 1, "気力+1") },
   { name: "MURさん夜中腹減んないすか？", img: IMG_MUR, desc: "この辺にぃ、うまいラーメン屋の屋台来てるらしいっすよ。双方HP+6", run: (g: Game) => { healRaw(g, "p", 6); healRaw(g, "c", 6); } },
+  { name: "MURが「夜中腹減んないすか？」", img: IMG_MUR, desc: "ラーメン屋台が湧いた（小並感）。双方HP+3、田所1枚ドロー", run: (g: Game) => { healRaw(g, "p", 3); healRaw(g, "c", 3); draw(g, "p", 1, true); } },
   { name: "終わり！閉廷！以上！皆解散！", desc: "全ての地形効果が解除された", run: (g: Game) => { g.mods = []; } },
   { name: "淫夢辞典のページ数が114514に増えた", desc: FLAVOR, run: (_g: Game) => undefined },
   { name: "どこかで「†悔い改めて†」の声", desc: FLAVOR, run: (_g: Game) => undefined },
@@ -1632,6 +1633,18 @@ export default function App() {
   const [pileOpen, setPileOpen] = useState(false);
   const [heatToast, setHeatToast] = useState<string | null>(null);
   useEffect(() => { if (!heatToast) return undefined; const t = setTimeout(() => setHeatToast(null), 1600); return () => clearTimeout(t); }, [heatToast]);
+  const [sanWarn, setSanWarn] = useState(0);
+  const [logOpen, setLogOpen] = useState(false);
+  const sanRef = useRef<{ prev: number; warned: boolean }>({ prev: 100, warned: false });
+  useEffect(() => {
+    if (!game) return;
+    const s = sanRef.current;
+    if (game.round <= 1 && game.san > 30) { s.warned = false; }
+    if (game.result === null) setLogOpen(false);
+    if (game.chapter === 2 && !s.warned && s.prev > 30 && game.san <= 30) { s.warned = true; setSanWarn(Date.now()); }
+    s.prev = game.san;
+  }, [game]);
+  useEffect(() => { if (!sanWarn) return undefined; const t = setTimeout(() => setSanWarn(0), 2600); return () => clearTimeout(t); }, [sanWarn]);
   const [cleared, setCleared] = useState<Set<string>>(() => loadCleared());
   const seen = useRef<Seen>({ ...SEEN0 });
   const seenHandUids = useRef<Set<number>>(new Set());
@@ -1864,6 +1877,9 @@ export default function App() {
     setSel(null);
     setPileOpen(false);
     setHeatToast(null);
+    setLogOpen(false);
+    setSanWarn(0);
+    sanRef.current = { prev: 100, warned: false };
     setGame(newGame(si));
     setScreen({ kind: "battle" });
   }, []);
@@ -2109,6 +2125,11 @@ export default function App() {
   return (
     <div style={{ ...root, position: "relative", overflow: "hidden", animation: wrapAnim }}>
       <style>{KEYFRAMES + FX_KEYFRAMES}</style>
+      {sanWarn ? (
+        <div role="status" style={{ position: "absolute", inset: 0, zIndex: 30, pointerEvents: "none", background: "radial-gradient(ellipse at center, transparent 55%, rgba(200,0,30,0.45))", display: "flex", justifyContent: "center", alignItems: "flex-start", paddingTop: 12 }}>
+          <span style={{ padding: "6px 14px", borderRadius: 9999, background: "rgba(40,0,8,0.85)", border: "1px solid #ff3050", color: "#ff8090", fontWeight: 800 }}>SANがヤバい…（正気度30以下・手札上限が減る）</span>
+        </div>
+      ) : null}
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 25, pointerEvents: "none", background: "radial-gradient(ellipse at 50% 0%, rgba(255,120,0,0.22), rgba(255,40,0,0.10) 55%, rgba(255,90,0,0.16))", mixBlendMode: "multiply", animation: "inmuHaze 3.6s ease-in-out infinite" }} />
       {[6, 17, 29, 41, 53, 64, 76, 88, 95].map((x: number, i: number) => <div key={`sw${x}`} aria-hidden="true" style={{ position: "absolute", top: 0, left: `${x}%`, width: 7, height: 11, zIndex: 26, pointerEvents: "none", borderRadius: "50% 50% 50% 50% / 65% 65% 35% 35%", background: "linear-gradient(180deg, rgba(200,235,255,0.95), rgba(120,190,255,0.55))", boxShadow: "0 0 4px rgba(150,210,255,0.8)", animation: `inmuSweat ${3.2 + (i % 4) * 0.9}s linear ${i * 0.7}s infinite` }} />)}
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 24, pointerEvents: "none", background: `radial-gradient(ellipse at center, transparent 55%, ${eld ? "rgba(30,0,60,0.55)" : "rgba(70,10,0,0.5)"} 100%)` }} />
@@ -2164,6 +2185,16 @@ export default function App() {
                 <span>崩壊回数: {g.collapses}</span>
                 <span>出札枚数: {g.p.played}</span>
                 <span>捨札枚数: {g.p.disc}</span>
+              </div>
+            ) : null}
+            {g.log.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <button type="button" onClick={() => setLogOpen((v: boolean) => !v)} style={{ padding: "6px 12px", background: "#444", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", alignSelf: "flex-start" }}>{logOpen ? "ログを閉じる" : "ログを見る"}</button>
+                {logOpen ? (
+                  <div style={{ ...theme.font.label, display: "flex", flexDirection: "column", gap: 2, padding: 8, borderRadius: 8, border: "1px solid #665533", background: "#2a2218" }}>
+                    {g.log.slice(0, 8).reverse().map((l: LogLine) => <div key={l.id}>{l.text}</div>)}
+                  </div>
+                ) : null}
               </div>
             ) : null}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -2351,7 +2382,7 @@ export default function App() {
                   onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => onCardKey(e, i.uid)}
                   className={drawing ? "drawFlash" : undefined}
                   style={{
-                    flex: "1 1 170px", maxWidth: 260, borderRadius: 12, overflow: "hidden",
+                    flex: g.p.hand.length > 6 ? "1 1 136px" : "1 1 170px", minWidth: 0, maxWidth: g.p.hand.length > 6 ? 210 : 260, borderRadius: 12, overflow: "hidden",
                     border: `${selected ? 3 : 2}px solid transparent`,
                     background: `linear-gradient(170deg, color-mix(in srgb, ${kindColor(d.kind)} 20%, ${theme.bg.base}), ${theme.bg.base} 55%) padding-box, linear-gradient(135deg, #fff3b0, #e0a800 25%, #8a5a00 50%, #ffd84a 75%, #fff3b0) border-box`, cursor: g.phase === "player" ? "pointer" : "default",
                     opacity: ok || g.phase !== "player" ? 1 : 0.5, transition: theme.motion.hover,
