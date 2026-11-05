@@ -461,6 +461,9 @@ const CARDS: CardDef[] = [
   { key: "takuya", name: "拓也は戦車にひかれても死なない", kind: "def", cost: 2, text: "シールド+14、受け流しの構え", flavor: "KBTIT伝説の耐久力（Wiki: KBTITの評判）", copies: 1 },
   { key: "menkyo", name: "免許証返してください", kind: "meme", cost: 1, text: "相手の熱量1を奪い、1枚ドロー", flavor: "DBの切実な願い", copies: 1 },
   { key: "tekozura", name: "手こずらせやがってよぉ", kind: "atk", cost: 2, text: "14ダメージ。相手がスタン中なら+10", flavor: "野獣大先輩の生徒指導（Wiki: 野獣大先輩）", copies: 1 },
+  { key: "mazui", name: "まずいですよ！", kind: "def", cost: 1, text: "シールド+10、次のターン相手の攻撃力-3", flavor: "KMRの危機察知能力。まずいですよ！", copies: 2 },
+  { key: "oraora", name: "オラオラ来いよオラァ！", kind: "atk", cost: 2, text: "16ダメージ。自分のシールドが15以上なら貫通", flavor: "挑発からの全力攻撃。胸板が厚いほど強気", copies: 1 },
+  { key: "yurusane", name: "もう許さねぇからなぁ？", kind: "chaos", cost: 2, text: "相手に18ダメージ、世界崩壊+1、自分のHP-6", flavor: "怒りの代償。全てを巻き込む覚悟の一撃", copies: 1 },
 ];
 
 const CARDS2: CardDef[] = [
@@ -1212,6 +1215,9 @@ function playCard(g: Game, side: Side, uid: number): void {
     case "menkyo": { const n = Math.min(1, o.heat); o.heat -= n; bump(f, n); const k = draw(g, side, 1, false); log(g, side, `→ ${o.name}の熱量${n}を奪い、${k}枚ドロー`); break; }
     case "tekozura": hit(14 + (o.stun > 0 ? 10 : 0), false); break;
     case "shoggoth": hit(26, false); sanDelta(g, -5); break;
+    case "mazui": f.shield += 10; o.power = Math.max(0, o.power - 3); log(g, side, `→ シールド+10、${o.name}の次ターン攻撃力-3（まずいですよ！）`); break;
+    case "oraora": hit(16, f.shield >= 15); break;
+    case "yurusane": hit(18, false); collapse(g, 1, "もう許さねぇ"); f.hp = Math.max(1, f.hp - 6); log(g, side, `→ 怒りの代償：自分のHP-6、世界崩壊+1`); break;
     default: break;
   }
   if (cb > 0 && o.hp > 0) {
@@ -1315,6 +1321,8 @@ function estimate(g: Game, key: string): number {
     case "sannin": return 27;
     case "owari": return 12;
     case "tekozura": return o.stun > 0 ? 24 : 14;
+    case "oraora": return 16;
+    case "yurusane": return 18;
     default: return 0;
   }
 }
@@ -1453,8 +1461,9 @@ function HpBar({ value, max, color }: { value: number; max: number; color: strin
 function FighterPanel({ f, color, isPlayer, active, portrait, eerie, pops, aura }: { f: Fighter; color: string; isPlayer: boolean; active: boolean; portrait?: string; eerie?: boolean; pops: Pop[]; aura?: string }) {
   const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
   const stat: CSSProperties = { ...theme.font.label, color: theme.text.secondary };
+  const isLowHp = f.hp <= 35 && f.hp > 0;
   return (
-    <div style={{ border: `${active ? 3 : 2}px solid ${active ? "#ffd84a" : "rgba(224,168,0,0.6)"}`, borderRadius: 14, padding: 14, background: theme.bg.elevated, backgroundImage: `linear-gradient(160deg, color-mix(in srgb, ${color} 24%, transparent), transparent 45%, rgba(0,0,0,0.22))`, boxShadow: active ? "0 0 0 1px #8a5a00, 0 0 22px rgba(255,200,60,0.55), inset 0 1px 0 rgba(255,255,255,0.15)" : "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)", position: "relative", ...(aura ? ({ "--aura": aura, boxShadow: `0 0 0 2px ${aura}, 0 0 14px ${aura}`, animation: "inmuAura 0.9s ease-in-out 4" } as unknown as CSSProperties) : {}) }}>
+    <div className={isLowHp ? "lowHp" : ""} style={{ border: `${active ? 3 : 2}px solid ${active ? "#ffd84a" : "rgba(224,168,0,0.6)"}`, borderRadius: 14, padding: 14, background: theme.bg.elevated, backgroundImage: `linear-gradient(160deg, color-mix(in srgb, ${color} 24%, transparent), transparent 45%, rgba(0,0,0,0.22))`, boxShadow: active ? "0 0 0 1px #8a5a00, 0 0 22px rgba(255,200,60,0.55), inset 0 1px 0 rgba(255,255,255,0.15)" : "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)", position: "relative", ...(aura ? ({ "--aura": aura, boxShadow: `0 0 0 2px ${aura}, 0 0 14px ${aura}`, animation: "inmuAura 0.9s ease-in-out 4" } as unknown as CSSProperties) : {}) }}>
       {pops.map((p: Pop) => (
         <span key={p.id} aria-hidden="true" style={{ position: "absolute", left: `${p.x}%`, top: 16, zIndex: 3, pointerEvents: "none", ...(p.crit ? theme.font.heading1 : theme.font.heading2), fontWeight: theme.weight.semibold, whiteSpace: "nowrap", color: p.heal ? (theme.dataviz.categorical[2] ?? theme.text.success) : p.crit ? theme.dataviz.negative : theme.text.primary, textShadow: `0 2px 0 ${theme.bg.base}, 0 0 10px ${p.crit ? theme.dataviz.negative : theme.bg.base}`, animation: "inmuPop 1s ease-out forwards" }}>{p.text}{p.crit ? " CRITICAL!!" : ""}</span>
       ))}
@@ -1691,6 +1700,52 @@ export default function App() {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    if (screen.kind !== "battle" || !game || game.phase !== "player") return undefined;
+    const handler = (e: Event): void => {
+      if (!(e instanceof KeyboardEvent)) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const key = e.key;
+      if (key >= "1" && key <= "9") {
+        const idx = parseInt(key, 10) - 1;
+        if (idx < game.p.hand.length) {
+          const card = game.p.hand[idx];
+          if (card) {
+            e.preventDefault();
+            setSel(card.uid);
+            const cost = costOf(game, cardOf(card.key), "p");
+            if (cost <= game.p.energy) {
+              setTimeout(() => {
+                setGame((prev: Game | null) => {
+                  if (!prev || prev.phase !== "player") return prev;
+                  const g = cloneG(prev);
+                  playCard(g, "p", card.uid);
+                  checkEnd(g);
+                  return g;
+                });
+                setSel(null);
+              }, 100);
+            }
+          }
+        }
+      } else if (key === "Enter" || key === " ") {
+        e.preventDefault();
+        getCtx();
+        sfx("pass");
+        setSel(null);
+        setGame((prev: Game | null) => {
+          if (!prev || prev.phase !== "player") return prev;
+          const g = cloneG(prev);
+          endTurn(g, "p");
+          if (!checkEnd(g)) g.phase = "cpu";
+          return g;
+        });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [screen, game, sel]);
 
   const startStage = useCallback((si: number): void => {
     getCtx();
@@ -2047,6 +2102,47 @@ export default function App() {
           </div>
         </div>
       ) : null}
+
+      <div style={panel}>
+        <div style={panelTitle}>戦況パネル</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+          <div style={{ ...theme.font.label }}>
+            <div style={{ color: theme.text.tertiary, marginBottom: 4 }}>敵の行動予測</div>
+            <div style={{ color: theme.text.primary }}>{intentOf(g)}</div>
+          </div>
+          <div style={{ ...theme.font.label }}>
+            <div style={{ color: theme.text.tertiary, marginBottom: 4 }}>熱量ゲージ</div>
+            <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
+              <span style={{ color: theme.text.primary }}>野獣: {g.p.heat}/{HEAT_MAX}</span>
+              <div style={{ flex: 1, background: theme.bg.subtle, borderRadius: 4, overflow: "hidden", height: 16 }}>
+                <div style={{ width: `${(g.p.heat / HEAT_MAX) * 100}%`, height: "100%", background: g.p.heat >= HEAT_MAX ? "#ff4444" : "#ffaa00", transition: "width 0.3s" }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 4 }}>
+              <span style={{ color: theme.text.primary }}>敵: {g.c.heat}/{HEAT_MAX}</span>
+              <div style={{ flex: 1, background: theme.bg.subtle, borderRadius: 4, overflow: "hidden", height: 16 }}>
+                <div style={{ width: `${(g.c.heat / HEAT_MAX) * 100}%`, height: "100%", background: g.c.heat >= HEAT_MAX ? "#ff4444" : "#ffaa00", transition: "width 0.3s" }} />
+              </div>
+            </div>
+          </div>
+          <div style={{ ...theme.font.label }}>
+            <div style={{ color: theme.text.tertiary, marginBottom: 4 }}>連鎖状態</div>
+            <div style={{ color: theme.text.primary }}>
+              {g.p.chain >= 2 ? `${g.p.chain}連鎖中（${KIND_LABEL[g.p.chainKind ?? "atk"]}）` : "連鎖なし"}
+            </div>
+          </div>
+          {(() => {
+            const afford = g.p.hand.filter((i: Inst) => costOf(g, cardOf(i.key), "p") <= g.p.energy);
+            const atk = afford.map((i: Inst) => ({ i, e: estimate(g, i.key) })).filter((x: { i: Inst; e: number }) => x.e > 0).sort((a: { i: Inst; e: number }, b: { i: Inst; e: number }) => b.e - a.e)[0];
+            return atk ? (
+              <div style={{ ...theme.font.label }}>
+                <div style={{ color: theme.text.tertiary, marginBottom: 4 }}>おすすめ札</div>
+                <div style={{ color: theme.dataviz.red }}>【{cardOf(atk.i.key).name}】約{atk.e}ダメージ</div>
+              </div>
+            ) : null;
+          })()}
+        </div>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 12 }}>
         <div style={panel}>
