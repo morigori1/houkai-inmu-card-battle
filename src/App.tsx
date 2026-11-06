@@ -430,12 +430,12 @@ const CARDS: CardDef[] = [
   { key: "yattaze", name: "やったぜ。", kind: "heal", cost: 2, text: "HP+12、攻撃力+1（永続）", flavor: "報告文の書き出しはいつもこれ", copies: 1 },
   { key: "yohou", name: "下北沢の天気予報（所により崩壊）", kind: "chaos", cost: 0, text: "次の崩壊予報を引き直す、熱量+1", flavor: "降水確率114514%。傘じゃ防げない", copies: 1 },
   { key: "sundome", name: "迫真空手部・寸止め", kind: "atk", cost: 1, text: "6ダメージ＋スタン（シールド10以上の相手には無効）", flavor: "当てる気はない（当たる）", copies: 2 },
-  { key: "mugicha", name: "冷えてるか〜？（麦茶）", kind: "heal", cost: 1, text: "再生3R（毎R HP+4）、脆弱か弱体を1つ解除", flavor: "夏の暑い日にはこれ。ただの麦茶です（念押し）", copies: 1 },
+  { key: "mugicha", name: "再生麦茶（冷えてるか〜？）", kind: "heal", cost: 1, text: "再生3R（毎R HP+4）、脆弱か弱体を1つ解除", flavor: "夏の暑い日にはこれ。再生するただの麦茶です（念押し）", copies: 1 },
   { key: "assouda", name: "あっ、そうだ（唐突）", kind: "meme", cost: 0, text: "連鎖を途切れさせず+1、1枚ドロー", flavor: "話題転換の達人。何がそうだったのかは不明", copies: 1 },
   { key: "miroyo", name: "ほら、見ろよ見ろよ", kind: "meme", cost: 1, text: "相手を脆弱2R（被ダメ×1.5、崩壊ダメも）", flavor: "晒された弱点は114514倍痛い", copies: 1 },
   { key: "gankou", name: "野獣の眼光（覚醒）", kind: "atk", cost: 3, text: "熱量を全消費、12＋熱量×6ダメージ。熱量4以上で貫通", flavor: "溜めて溜めて、一気に放つ。見とけよ見とけよ〜", copies: 1 },
   { key: "atsui", name: "暑いなぁ…（汗だく）", kind: "atk", cost: 2, text: "12ダメージ＋熱量×3", flavor: "夏の暑い日、拳から湯気が出る", copies: 1 },
-  { key: "hiyashi", name: "冷えてるか〜？（麦茶）", kind: "heal", cost: 1, text: "HP+8、熱量+1", flavor: "キンキンに冷えた一杯で再点火", copies: 1 },
+  { key: "hiyashi", name: "キンキン麦茶（熱補給）", kind: "heal", cost: 1, text: "HP+8、熱量+1", flavor: "キンキンに冷えた一杯で再点火", copies: 1 },
   { key: "kintore", name: "筋トレ（ベンチプレス114kg）", kind: "def", cost: 1, text: "シールド+8。次ラウンド気力+1（貯金。今は弱いが次が厚い）", flavor: "野獣邸のトレーニングルームで鍛えた胸板。迫真", copies: 2 },
   { key: "kaunta", name: "受け流し（いいよ！こいよ！）", kind: "def", cost: 1, text: "構え：このラウンド次に受ける攻撃を半減し、半分を跳ね返す", flavor: "来いよ来いよ…ほら来た。迫真空手部の型", copies: 2 },
   { key: "hoshii", name: "お前のものが欲しいとか？", kind: "meme", cost: 1, text: "相手の熱量を2奪う。相手が覚醒中なら覚醒を奪う", flavor: "欲しがりな先輩。熱も覚醒も持っていく", copies: 1 },
@@ -985,6 +985,10 @@ const EVENTS: CollapseEvent[] = [
     for (const s of [g.p, g.c] as Fighter[]) { if (!s.chainKind) s.chainKind = "meme"; s.chain = Math.max(1, s.chain + 1); }
     draw(g, "p", 1, true);
   } },
+  { name: "再生麦茶が湧き出た", img: IMG_C_MUGI, desc: "冷えてますよ〜。双方HP+6、再生2R", run: (g: Game) => { healRaw(g, "p", 6); healRaw(g, "c", 6); g.p.regen = Math.max(g.p.regen, 2); g.c.regen = Math.max(g.c.regen, 2); } },
+  { name: "おなしゃす（世界からの一礼）", desc: "世界が頭を下げた。双方シールド+5、田所1枚ドロー", run: (g: Game) => { g.p.shield += 5; g.c.shield += 5; draw(g, "p", 1, true); } },
+  { name: "大会近いからね、しょうがないね", desc: "追い込みの気合。次のラウンド気力+1、双方シールド+4", run: (g: Game) => { addMod(g, "energyUp", 1, "気力+1"); g.p.shield += 4; g.c.shield += 4; } },
+  { name: "クチアケーナ・ホラ（天啓）", desc: "口が開いて語録が入る。双方1枚ドロー、熱量+1", run: (g: Game) => { draw(g, "p", 1, true); draw(g, "c", 1, true); bump(g.p, 1); bump(g.c, 1); } },
 ];
 
 const EVENTS2: CollapseEvent[] = [
@@ -1087,8 +1091,8 @@ function healSide(g: Game, side: Side, amt: number): string {
 }
 
 const ROUND_CALLS: string[] = ["王道を征く（ソープ系）", "こ↑こ↓から始めるゾ", "おっ、開いてんじゃ〜ん", "入って、どうぞ", "じゃあまず、年齢を教えてくれるかな？", "お前らクルルァについてこい", "よし、じゃあぶち込んでやるぜ！（カードを）", "つべこべ言わずに来いホイ", "いざ鎌倉！という高揚感", "今日はいっぱい飲むゾ〜（麦茶）", "はい、ヨロシクぅ！", "もう始まってる！", "続きいくよぉ〜", "オッスオッス！", "聖地・下北沢から生中継", "大会近いからね、しょうがないね", "オッスお願いしまーす", "ヤッタネ！（まだ何もしてない）", "筋トレ終わったし、やりますか", "下北沢の野獣、参上（迫真）", "お前のものが欲しいとか？", "本当に出ちゃうよ！（予告）", "24歳、学生です（大嘘）", "いいよ！こいよ！", "見とけよ見とけよ〜", "本番はこれから", "あくしろよ", "おなしゃす（小声）", "そんな装備で大丈夫か？", "ほらいくどー！", "じゃけん次行きましょうね〜", "時よ止まれ（ザ・ワールド）", "夏の暑い日、気温114514℃", "喉渇いた…喉渇かない？", "暑いねぇ、汗だくだくだよ", "まずウチさぁ、屋上あんだけど…焼いてかない？", "アイスティーしかなかったけどいいかな？", "ムシムシするなぁ（迫真）", "灼熱の屋上でオッスお願いしまーす"];
-const HOT_LINES: string[] = ["バッチェ冷えてますよ（嘘）", "アツゥイ！", "あ＾〜うめぇなぁ！（麦茶）", "ビール！ビール！", "喉がイキスギィ！", "屋上が鉄板焼きに", "冷えてるか〜？（ぬるい）", "汗でカードがふやけた", "ぬわあああああん暑いもおおおおおん", "はえ〜（蒸発）", "世界が汗で溶けていく", "喉渇いた…喉渇かない？", "夏の暑い日、地面からかげろう", "麦茶が一瞬で蒸発した", "チカレタ…（熱中症）", "ムシムシして崩壊が加速", "屋上のタイルが灼熱で割れた", "汗が滝のように流れる（迫真）", "アスファルトが溶けて足跡が残る", "セミの声が114514デシベル", "エアコンが負けを認めた"];
-const HIT_LINES: string[] = ["イキスギィ！", "ンアッー！", "最高やな！", "いいねぇー", "ファッ⁉", "痛いですね…これは痛い", "Foo↑気持ちぃ〜", "あ〜、いいっすね〜", "たまげたなあ", "世界一やお前！", "嘘つけ絶対効いてたゾ", "やっぱり王道を征く", "ヌッ！", "やりますねぇ！", "ヤッタネ！", "本当に出ちゃうよ！", "迫真の一撃", "筋トレの成果が出たな", "いいよ！こいよ！", "いいぞもっとやれ", "ファッ！？", "はっきりわかんだね", "いいゾ〜これ", "当たり前だよなぁ？", "これもうわかんねぇな", "まずいですよ！"];
+const HOT_LINES: string[] = ["バッチェ冷えてますよ（嘘）", "アツゥイ！", "あ＾〜うめぇなぁ！（麦茶）", "ビール！ビール！", "喉がイキスギィ！", "屋上が鉄板焼きに", "冷えてるか〜？（ぬるい）", "汗でカードがふやけた", "ぬわあああああん暑いもおおおおおん", "はえ〜（蒸発）", "世界が汗で溶けていく", "喉渇いた…喉渇かない？", "夏の暑い日、地面からかげろう", "麦茶が一瞬で蒸発した", "チカレタ…（熱中症）", "ムシムシして崩壊が加速", "屋上のタイルが灼熱で割れた", "汗が滝のように流れる（迫真）", "アスファルトが溶けて足跡が残る", "セミの声が114514デシベル", "エアコンが負けを認めた", "キンキンのはずが湯になってる", "再生麦茶が沸騰した", "バッチェ、もう熱湯ですよ", "冷えてるか〜？（熱い）", "汗で語録がにじむ"];
+const HIT_LINES: string[] = ["イキスギィ！", "ンアッー！", "最高やな！", "いいねぇー", "ファッ⁉", "痛いですね…これは痛い", "Foo↑気持ちぃ〜", "あ〜、いいっすね〜", "たまげたなあ", "世界一やお前！", "嘘つけ絶対効いてたゾ", "やっぱり王道を征く", "ヌッ！", "やりますねぇ！", "ヤッタネ！", "本当に出ちゃうよ！", "迫真の一撃", "筋トレの成果が出たな", "いいよ！こいよ！", "いいぞもっとやれ", "ファッ！？", "はっきりわかんだね", "いいゾ〜これ", "当たり前だよなぁ？", "これもうわかんねぇな", "まずいですよ！", "おなしゃす！", "効いてる効いてる（察し）", "ほらいくどー！", "痛いですね本当に痛い", "あ〜イキスギィ（追撃）"];
 const PASS_LINES: string[] = ["ぬわあん疲れたもん", "おかのした", "んにゃぴ", "ヘーキヘーキ", "しょうがねぇなぁ（悟空）", "これもうわかんねぇな", "あっ、そっかぁ…", "いや〜キツイっす（素）", "こいついつも疲れてんな", "悲しいなぁ…", "どうすっかな〜俺もな〜", "知らねーよ、そんなの", "ｸｩｰﾝ...", "はぁ〜〜〜（クソデカため息）", "しょうがねぇなぁ", "筋トレのインターバル", "プロテイン補給（麦茶割り）", "野獣の眼光で様子見", "喉渇いた…喉渇かない？", "ちょっと休憩（帰宅部）", "ぬわあああん疲れたもおおおん", "様子見（突然の休憩）", "チカレタ…", "麦茶ゴクゴク（冷えてるか〜？）", "暑すぎて動けねぇ…", "日陰で汗を拭く", "ぬわああん暑かったもおおん"];
 
 const ENEMY_LINES: Record<string, string[]> = {
@@ -1474,6 +1478,8 @@ const CARD_TIPS: Record<string, string> = {
   iced: "シールド無視で確定スタン", aa: "攻撃の直後で+6", baka: "HPが相手以下なら貫通", tekozura: "スタン中の相手に+10（アイスティー→手こずらせ）", yarimasu2: "大技の前に", owari: "地形効果をまとめて消す", takuya: "大技予告に合わせて", kanashii: "敵の攻撃力を削る", akushiro: "気力0。あと1足りない時に",
   karate: "攻撃の直後に出すとスタン", omatase: "こ↑こ↓か見とけよの後でコスト-2", sai24: "ぬわの後で+10", senpai: "ミーム技の後で脆弱も付く", dame: "脆弱中の相手ならスタン", atarimae: "弱体＋脆弱で+14", gankou: "熱量4以上で貫通。熱を溜めてから", atsui: "熱量が高いほど強い", combo: "攻撃連鎖の締めに", kintore: "今ラウンドを捨て、次に気力4", kaunta: "大技予告に合わせて", hoshii: "相手の熱量MAX・覚醒に刺す", dechau: "気力0。瀕死なら貫通", yattane: "熱量の使い道その3（回復）", sundome: "シールド10以上には効かない",
   soudayo: "相手が連鎖中ならそのタイプに便乗。締めの大技の前に",
+  mugicha: "再生3R＋デバフ1つ解除。暑さ対策の基本",
+  hiyashi: "即HP+8と熱量+1。連鎖の合間に熱を足す",
 };
 function newGame(si: number): Game {
   const st = (STAGES[si] ?? STAGES[0]) as Stage;
@@ -1498,10 +1504,41 @@ function newGame(si: number): Game {
   return g;
 }
 
+const THEME: any = {
+  text: { primary: "#f8e8a0", secondary: "#998866", tertiary: "#776644", danger: "#cc4444", warning: "#ccaa44", success: "#44cc44" },
+  bg: { base: "#1a1511", elevated: "#3a3522", subtle: "#2a2511" },
+  border: { default: "#665533", strong: "#887744", weak: "#443322" },
+  fill: { secondary: "#2a2511" },
+  font: {
+    family: '"MS Gothic", "Osaka-mono", Consolas, monospace',
+    label: { fontSize: 12, lineHeight: 1.35 },
+    caption: { fontSize: 11, lineHeight: 1.35 },
+    body1: { fontSize: 16, lineHeight: 1.5 },
+    body2: { fontSize: 14, lineHeight: 1.45 },
+    heading1: { fontSize: 28, lineHeight: 1.2 },
+    heading2: { fontSize: 22, lineHeight: 1.25 },
+    heading3: { fontSize: 18, lineHeight: 1.3 },
+  },
+  weight: { semibold: 700, bold: 800 },
+  accent: "#d4af37",
+  primary: "#d4af37",
+  base: "#665533",
+  success: "#44cc44",
+  warning: "#ccaa44",
+  danger: "#cc4444",
+  dataviz: {
+    red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc",
+    primary: "#d4af37", base: "#665533",
+    categorical: ["#e0a800", "#ff6a00", "#44cc88", "#4488cc", "#cc44aa"],
+    negative: "#ff4444",
+    other: "#cc88ff",
+  },
+  motion: { hover: "transform 0.15s ease, box-shadow 0.15s ease" },
+};
 const ICON_POS: Record<Kind, string> = { atk: "0% 0%", def: "100% 0%", heal: "0% 100%", meme: "center", chaos: "100% 100%" };
 
 function KindIcon({ kind, size, art }: { kind: Kind; size: number; art?: string }) {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const isMeme = kind === "meme";
   return (
     <span
@@ -1519,7 +1556,7 @@ function KindIcon({ kind, size, art }: { kind: Kind; size: number; art?: string 
 }
 
 function HpBar({ value, max, color }: { value: number; max: number; color: string }) {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div style={{ position: "relative", height: 16, borderRadius: 9999, background: theme.fill.secondary, backgroundImage: "linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.15))", border: "1px solid rgba(255,215,90,0.6)", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.5)", overflow: "hidden" }}>
@@ -1531,7 +1568,7 @@ function HpBar({ value, max, color }: { value: number; max: number; color: strin
 }
 
 function FighterPanel({ f, color, isPlayer, active, portrait, eerie, pops, aura }: { f: Fighter; color: string; isPlayer: boolean; active: boolean; portrait?: string; eerie?: boolean; pops: Pop[]; aura?: string }) {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const stat: CSSProperties = { ...theme.font.label, color: theme.text.secondary };
   const isLowHp = f.hp <= 35 && f.hp > 0;
   return (
@@ -1629,8 +1666,12 @@ const FX_KEYFRAMES = ["A", "B"].map((s: string) => `@keyframes inmuSh${s}{${SHAK
 const STORAGE_KEY_CLEARED = "houkai-inmu-cleared-stages";
 const STORAGE_KEY_CLEARED_CANVAS = "houkai-inmu-cleared";
 const MUTE_KEY = "houkai-inmu-muted";
+const KBTIP_KEY = "houkai-inmu-kbtip";
 function loadMuted(): boolean {
   try { return localStorage.getItem(MUTE_KEY) === "1"; } catch { return false; }
+}
+function loadKbTip(): boolean {
+  try { return localStorage.getItem(KBTIP_KEY) !== "0"; } catch { return true; }
 }
 
 function loadCleared(): Set<string> {
@@ -1651,11 +1692,12 @@ function saveCleared(cleared: Set<string>): void {
 }
 
 export default function App() {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const [game, setGame] = useState<Game | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: "title" });
   const [sel, setSel] = useState<number | null>(null);
   const [muted, setMuted] = useState<boolean>(() => { const m = loadMuted(); sfxMuted = m; return m; });
+  const [kbTip, setKbTip] = useState<boolean>(() => loadKbTip());
   const [pileOpen, setPileOpen] = useState(false);
   const [heatToast, setHeatToast] = useState<string | null>(null);
   useEffect(() => { if (!heatToast) return undefined; const t = setTimeout(() => setHeatToast(null), 1600); return () => clearTimeout(t); }, [heatToast]);
@@ -1829,6 +1871,10 @@ export default function App() {
       if (!next) { getCtx(); sfx("pass"); }
       return next;
     });
+  }, []);
+  const dismissKbTip = useCallback((): void => {
+    setKbTip(false);
+    try { localStorage.setItem(KBTIP_KEY, "0"); } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
@@ -2394,10 +2440,11 @@ export default function App() {
             {g.p.hand.map((i: Inst, handIdx: number) => {
               const d = cardOf(i.key);
               const cost = costOf(g, d, "p");
+              const selected = sel === i.uid;
               const chainHint = g.p.chain > 0 && (g.p.chainKind === d.kind || d.key === "assouda" || d.key === "soudayo");
+              const chainBreak = selected && g.p.chain > 0 && !chainHint;
               const cut = cost < Math.max(0, d.cost + costShift(g));
               const ok = g.phase === "player" && cost <= g.p.energy;
-              const selected = sel === i.uid;
               const drawing = flashUids.has(i.uid);
               const keyBadge = handIdx < 9 ? String(handIdx + 1) : "";
               return (
@@ -2419,6 +2466,7 @@ export default function App() {
                   }}
                 >
                   {keyBadge ? <span aria-hidden="true" style={{ position: "absolute", top: 4, left: 4, zIndex: 2, width: 18, height: 18, borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.72)", border: "1px solid #ffd84a", color: "#ffd84a", fontSize: 11, fontWeight: 800 }}>{keyBadge}</span> : null}
+                  {chainBreak ? <span aria-label="連鎖が切れる" style={{ position: "absolute", top: 4, right: 4, zIndex: 2, borderRadius: 9999, padding: "2px 7px", background: "rgba(160,30,20,0.92)", border: "1px solid #ffd84a", color: "#fff3b0", fontSize: 10, fontWeight: 800, letterSpacing: 0.3 }}>連鎖が切れる</span> : null}
                   {CARD_ART[d.key] ? <div style={{ height: 72, backgroundImage: `linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.55)), url(${CARD_ART[d.key]})`, backgroundSize: "cover", backgroundPosition: "center 30%", borderBottom: `3px solid ${kindColor(d.kind)}` }} /> : <div style={{ height: 8, background: `linear-gradient(90deg, ${kindColor(d.kind)}, #ffd84a, ${kindColor(d.kind)})`, boxShadow: `0 0 10px ${kindColor(d.kind)}` }} />}
                   <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 4 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
@@ -2459,10 +2507,14 @@ export default function App() {
               <button disabled={g.p.heat < HEAT_MAX || g.p.awaken} onClick={() => heatAct("awaken")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>野獣覚醒（熱量5→次の攻撃×2・貫通）</button>
               {selDef && !selPlayable ? <span style={{ ...theme.font.label, color: theme.text.warning }}>気力が足りない（そんな装備で大丈夫か？）</span> : null}
               {selDef && selPlayable ? <span style={{ ...theme.font.label, color: theme.text.secondary }}>出すと残り気力 {g.p.energy - costOf(g, selDef, "p")}{g.p.energy - costOf(g, selDef, "p") > 0 ? "（余り→ターン終了で熱量+1）" : ""}</span> : null}
+              {selDef && g.p.chain > 0 && !(g.p.chainKind === selDef.kind || selDef.key === "assouda" || selDef.key === "soudayo") ? <span style={{ ...theme.font.label, color: theme.text.warning, fontWeight: 800, border: "1px solid #ffd84a", borderRadius: 9999, padding: "2px 8px", background: "rgba(160,30,20,0.85)" }}>連鎖が切れる</span> : null}
             </div>
-            <div style={{ ...theme.font.caption, color: theme.text.tertiary, paddingTop: 4 }}>
-              キーボード： 1-9 カード選択・出す ／ Enter/Space ターン終了 ／ M ミュート ／ Esc 選択解除
-            </div>
+            {kbTip ? (
+              <div style={{ ...theme.font.caption, color: theme.text.tertiary, paddingTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span>キーボード： 1-9 カード選択・出す ／ Enter/Space ターン終了 ／ M ミュート ／ Esc 選択解除</span>
+                <button type="button" onClick={dismissKbTip} aria-label="キーボード案内を閉じる" style={{ padding: "2px 8px", background: "#444", color: "#fff", border: "1px solid #665533", borderRadius: 4, cursor: "pointer", fontSize: 11 }}>閉じる</button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
