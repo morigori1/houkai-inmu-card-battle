@@ -1504,10 +1504,41 @@ function newGame(si: number): Game {
   return g;
 }
 
+const THEME: any = {
+  text: { primary: "#f8e8a0", secondary: "#998866", tertiary: "#776644", danger: "#cc4444", warning: "#ccaa44", success: "#44cc44" },
+  bg: { base: "#1a1511", elevated: "#3a3522", subtle: "#2a2511" },
+  border: { default: "#665533", strong: "#887744", weak: "#443322" },
+  fill: { secondary: "#2a2511" },
+  font: {
+    family: '"MS Gothic", "Osaka-mono", Consolas, monospace',
+    label: { fontSize: 12, lineHeight: 1.35 },
+    caption: { fontSize: 11, lineHeight: 1.35 },
+    body1: { fontSize: 16, lineHeight: 1.5 },
+    body2: { fontSize: 14, lineHeight: 1.45 },
+    heading1: { fontSize: 28, lineHeight: 1.2 },
+    heading2: { fontSize: 22, lineHeight: 1.25 },
+    heading3: { fontSize: 18, lineHeight: 1.3 },
+  },
+  weight: { semibold: 700, bold: 800 },
+  accent: "#d4af37",
+  primary: "#d4af37",
+  base: "#665533",
+  success: "#44cc44",
+  warning: "#ccaa44",
+  danger: "#cc4444",
+  dataviz: {
+    red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc",
+    primary: "#d4af37", base: "#665533",
+    categorical: ["#e0a800", "#ff6a00", "#44cc88", "#4488cc", "#cc44aa"],
+    negative: "#ff4444",
+    other: "#cc88ff",
+  },
+  motion: { hover: "transform 0.15s ease, box-shadow 0.15s ease" },
+};
 const ICON_POS: Record<Kind, string> = { atk: "0% 0%", def: "100% 0%", heal: "0% 100%", meme: "center", chaos: "100% 100%" };
 
 function KindIcon({ kind, size, art }: { kind: Kind; size: number; art?: string }) {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const isMeme = kind === "meme";
   return (
     <span
@@ -1525,7 +1556,7 @@ function KindIcon({ kind, size, art }: { kind: Kind; size: number; art?: string 
 }
 
 function HpBar({ value, max, color }: { value: number; max: number; color: string }) {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div style={{ position: "relative", height: 16, borderRadius: 9999, background: theme.fill.secondary, backgroundImage: "linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.15))", border: "1px solid rgba(255,215,90,0.6)", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.5)", overflow: "hidden" }}>
@@ -1537,7 +1568,7 @@ function HpBar({ value, max, color }: { value: number; max: number; color: strin
 }
 
 function FighterPanel({ f, color, isPlayer, active, portrait, eerie, pops, aura }: { f: Fighter; color: string; isPlayer: boolean; active: boolean; portrait?: string; eerie?: boolean; pops: Pop[]; aura?: string }) {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const stat: CSSProperties = { ...theme.font.label, color: theme.text.secondary };
   const isLowHp = f.hp <= 35 && f.hp > 0;
   return (
@@ -1661,7 +1692,7 @@ function saveCleared(cleared: Set<string>): void {
 }
 
 export default function App() {
-  const theme: any = { text: "#f8e8a0", bg: "#1a1511", accent: "#d4af37", border: "#665533", fill: "#2a2511", font: "16px", secondary: "#998866", elevated: "#3a3522", weight: "bold", dataviz: { red: "#cc4444", yellow: "#ccaa44", green: "#44cc44", blue: "#4488cc", purple: "#8844cc", primary: "#d4af37", base: "#665533" }, success: "#44cc44", primary: "#d4af37", base: "#665533", warning: "#ccaa44", danger: "#cc4444" };
+  const theme: any = THEME;
   const [game, setGame] = useState<Game | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: "title" });
   const [sel, setSel] = useState<number | null>(null);
