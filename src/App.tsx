@@ -187,7 +187,7 @@ const CAST: CastEntry[] = [
 const STAGE_BG: Record<string, string> = { "1-1": IMG_BG_ROOF, "1-2": IMG_BG_ROOF, "1-3": IMG_KOKO, "1-4": IMG_BG_ROOF, "1-5": IMG_W_HOB, "2-1": IMG_BG_VOID, "2-4": IMG_BG_VOID };
 const IMG_CREDIT2 = "追加画像: 野獣邸写真 Asanagi / Wikimedia Commons（CC0）、一部カード絵と覚醒カットイン・屋上/異界背景・状態アイコン・カード裏面は生成パロディ、1-1・1-2の敵ポートレートと一部カード絵はユーザー提供素材";
 const ENEMY_IMG: Record<string, string> = { "1-1": IMG_U_SOCCER_A, "1-2": IMG_U_SOCCER_B, "1-3": IMG_TDN, "1-4": IMG_YAJU_DAI, "1-5": IMG_E_BEAST, "2-1": IMG_E_OLD, "2-2": IMG_E_COND, "2-3": IMG_E_WALL, "2-4": IMG_E_YOG };
-const CARD_ART: Record<string, string> = { iced: IMG_OMATASE, omatase: IMG_OMATASE, oudou: IMG_ODUO, kokoko: IMG_KOKO, senpai: IMG_KMR, aiten: IMG_MUR, jaken: IMG_MUR, aa: IMG_TDN, baan: IMG_TDN, menkyo: IMG_DB, takuya: IMG_KBTIT, tekozura: IMG_YAJU_DAI, doyagao: IMG_DOYA, yarimasu2: IMG_DOYA, owari: IMG_ODUO, atsui: IMG_BG_ROOF, hiyashi: IMG_C_MUGI, ganko2: IMG_ST_STUN, shoggoth: IMG_BG_VOID, meiyari: IMG_BG_VOID, kyushin: IMG_CARD_BACK, miroyo: IMG_ST_VULN, daijoubu: IMG_ST_REGEN, yarimasu: IMG_G_YARIMASU, ossu: IMG_U_SOCCER_B, iiyo: IMG_U_SOCCER_A, karate: IMG_C_SUMO, yohou: IMG_C_YOHOU, mugicha: IMG_C_MUGI, gankou: IMG_C_TIGER, bb: IMG_C_BB };
+const CARD_ART: Record<string, string> = { iced: IMG_OMATASE, omatase: IMG_OMATASE, oudou: IMG_ODUO, kokoko: IMG_KOKO, senpai: IMG_KMR, aiten: IMG_MUR, jaken: IMG_MUR, aa: IMG_TDN, baan: IMG_TDN, menkyo: IMG_DB, takuya: IMG_KBTIT, tekozura: IMG_YAJU_DAI, doyagao: IMG_DOYA, yarimasu2: IMG_DOYA, soudayo: IMG_DOYA, owari: IMG_ODUO, atsui: IMG_BG_ROOF, hiyashi: IMG_C_MUGI, ganko2: IMG_ST_STUN, shoggoth: IMG_BG_VOID, meiyari: IMG_BG_VOID, kyushin: IMG_CARD_BACK, miroyo: IMG_ST_VULN, daijoubu: IMG_ST_REGEN, yarimasu: IMG_G_YARIMASU, ossu: IMG_U_SOCCER_B, iiyo: IMG_U_SOCCER_A, karate: IMG_C_SUMO, yohou: IMG_C_YOHOU, mugicha: IMG_C_MUGI, gankou: IMG_C_TIGER, bb: IMG_C_BB };
 const IMG_CREDIT = "追加画像: Wikimedia Commons — 葛飾北斎「小幡小平次」「雪中虎図」「相撲」、H.P.ラヴクラフトのクトゥルフ素描、フラマリオン版画、ゴッホ「病院の廊下」、歌川豊国「芝居小屋」、1963年の台風天気図（以上パブリックドメイン）／麦茶（CC0）／下北沢駅ホーム © Ryosuke Yagi（CC BY 2.0）／屋上の夕焼け © Uroš Novina（CC BY 2.0）／夜の原宿駅ホーム © Theodore Xu（CC BY-SA 4.0）。いずれも縮小・切り抜き加工。";
 
 type Side = "p" | "c";
@@ -472,6 +472,7 @@ const CARDS: CardDef[] = [
   { key: "ryukou", name: "流行らせコラ！", kind: "meme", cost: 2, text: "次の攻撃×1.8、熱量+1", flavor: "無理矢理でも流行らせる意志の力", copies: 1 },
   { key: "kuun", name: "クゥーン…", kind: "def", cost: 1, text: "シールド+7、相手の攻撃力-1", flavor: "カラスの鳴き声。なぜか相手が弱る", copies: 1 },
   { key: "bishi", name: "微粒子レベルで存在している", kind: "meme", cost: 1, text: "1枚ドロー、次の防御×1.3", flavor: "観測するまで存在しない（量子淫夢論）", copies: 1 },
+  { key: "soudayo", name: "そうだよ（便乗）", kind: "meme", cost: 0, text: "相手の連鎖種別に便乗（なければミーム）。連鎖継続＋1枚ドロー＋熱量+1", flavor: "便乗は最強の戦術。そうだよ（便乗）", copies: 2 },
 ];
 
 const CARDS2: CardDef[] = [
@@ -980,6 +981,10 @@ const EVENTS: CollapseEvent[] = [
   { name: "下北沢のセミが「114514」と鳴く", img: IMG_KOKO, desc: FLAVOR, run: (_g: Game) => undefined },
   { name: "屋上で日焼けしてた（焼いてかない？）", img: IMG_TDN, desc: "いい天気だ。田所HP+5、熱量+1", run: (g: Game) => { healRaw(g, "p", 5); bump(g.p, 1); } },
   { name: "アイスティーしかなかったけどいいかな？", img: IMG_KOKO, desc: "睡魔が来る。敵の熱量-2、田所シールド+4", run: (g: Game) => { g.c.heat = Math.max(0, g.c.heat - 2); g.p.shield += 4; } },
+  { name: "「そうだよ（便乗）」が空から", img: IMG_DOYA, desc: "便乗気流が吹く。双方の連鎖+1（種別が無ければミーム）、田所は1枚ドロー", run: (g: Game) => {
+    for (const s of [g.p, g.c] as Fighter[]) { if (!s.chainKind) s.chainKind = "meme"; s.chain = Math.max(1, s.chain + 1); }
+    draw(g, "p", 1, true);
+  } },
 ];
 
 const EVENTS2: CollapseEvent[] = [
@@ -1021,6 +1026,12 @@ const EVENTS2: CollapseEvent[] = [
   { name: "星辰が114514の配置に", desc: "宇宙的な祝福。田所HP+5、SAN-2", run: (g: Game) => { healRaw(g, "p", 5); sanDelta(g, -2); } },
   { name: "名状しがたきドヤ顔", img: IMG_DOYA, desc: "深淵がドヤ顔で覗き返す。田所の次の攻撃×1.4、SAN-4", run: (g: Game) => { g.p.mult = Math.min(3, g.p.mult * 1.4); sanDelta(g, -4); } },
   { name: "異界の王道を征く", img: IMG_ODUO, desc: "ソープ系迷宮が星辰に接続。双方シールド+8、SAN-3", run: (g: Game) => { g.p.shield += 8; g.c.shield += 8; sanDelta(g, -3); } },
+  { name: "便乗の声が重なる", img: IMG_DOYA, desc: "空から「そうだよ（便乗）」。SAN-5、田所連鎖+2（種別なければミーム）、熱量+1", run: (g: Game) => {
+    sanDelta(g, -5);
+    if (!g.p.chainKind) g.p.chainKind = "meme";
+    g.p.chain = Math.max(1, g.p.chain + 2);
+    bump(g.p, 1);
+  } },
 ];
 function evList(g: Game): CollapseEvent[] { return g.chapter === 2 ? EVENTS2 : EVENTS; }
 
@@ -1108,6 +1119,12 @@ function playCard(g: Game, side: Side, uid: number): void {
   const prevKey = f.lastKey;
   const prevKind = f.chainKind;
   if (d.key === "assouda") { f.chain = Math.max(1, f.chain + 1); if (!f.chainKind) f.chainKind = "meme"; }
+  else if (d.key === "soudayo") {
+    const ride = (side === "p" ? g.c : g.p).chainKind || "meme";
+    if (f.chainKind === ride) f.chain++;
+    else { f.chain = Math.max(1, f.chain); f.chainKind = ride; }
+    if (!f.chainKind) f.chainKind = ride;
+  }
   else if (f.chainKind === d.kind) f.chain++;
   else { f.chain = 1; f.chainKind = d.kind; }
   f.lastKey = d.key;
@@ -1191,6 +1208,13 @@ function playCard(g: Game, side: Side, uid: number): void {
     case "sundome": hit(6, false); if (o.hp > 0) applyStun(g, other(side), side); break;
     case "mugicha": { f.regen = Math.max(f.regen, 3); const c = f.vuln > 0 ? "脆弱" : f.weak > 0 ? "弱体" : ""; if (f.vuln > 0) f.vuln = 0; else f.weak = 0; log(g, side, `→ 再生3R${c ? `、${c}解除` : ""}。冷えてますよ〜`); break; }
     case "assouda": { const n = draw(g, side, 1, false); log(g, side, `→ 連鎖継続（${ch}）、${n}枚ドロー。あっ、そうだ（何が）`); break; }
+    case "soudayo": {
+      const ride = (side === "p" ? g.c : g.p).chainKind || "meme";
+      bump(f, 1);
+      const n = draw(g, side, 1, false);
+      log(g, side, `→ 便乗（${ride}）連鎖${ch}、熱量+1、${n}枚ドロー。そうだよ（便乗）`);
+      break;
+    }
     case "miroyo": o.vuln = Math.max(o.vuln, 2); log(g, side, `→ ${o.name}は脆弱2R（被ダメ×1.5）`); break;
     case "gankou": { const h = f.heat; f.heat = 0; log(g, side, `→ 熱量${h}を解放`); hit(12 + h * 6, h >= 4); break; }
     case "hakkiri": { const n = draw(g, side, 1, false); f.mult = Math.min(3, f.mult * 1.3); log(g, side, `→ ${n}枚ドロー、次の攻撃×${f.mult.toFixed(2)}`); break; }
@@ -1355,7 +1379,7 @@ function cpuScore(g: Game, i: Inst): number {
   const f = g.c;
   const o = g.p;
   const d = cardOf(i.key);
-  const chainOn = f.chain > 0 && (f.chainKind === d.kind || d.key === "assouda");
+  const chainOn = f.chain > 0 && (f.chainKind === d.kind || d.key === "assouda" || d.key === "soudayo");
   const cb = chainOn ? f.chain : 0;
   const est = estimate(g, i.key);
   let s = 0;
@@ -1404,12 +1428,13 @@ function cpuAct(g: Game): Game {
 function intentOf(g: Game): string {
   const f = g.c;
   const heat = f.heat >= HEAT_MAX ? "／熱量MAX：覚醒の気配（まずいですよ！）" : f.heat >= 3 ? `／熱量${f.heat}：気合で気力+1あり` : "";
-  if (f.awaken) return "覚醒済み：次の攻撃×2・貫通が来る。受け流しか「お前のものが欲しいとか？」で潰せ";
+  const chain = f.chain > 0 && f.chainKind ? `／連鎖${f.chain}（${KIND_LABEL[f.chainKind]}）` : "";
+  if (f.awaken) return `覚醒済み：次の攻撃×2・貫通が来る。受け流しか「お前のものが欲しいとか？」で潰せ${chain}`;
   const aff = f.hand.filter((i: Inst) => costOf(g, cardOf(i.key), "c") <= f.energy);
   const atk = aff.map((i: Inst) => ({ i, e: estimate(g, i.key) })).filter((x: { i: Inst; e: number }) => x.e > 0).sort((a: { i: Inst; e: number }, b: { i: Inst; e: number }) => b.e - a.e)[0];
-  if (atk) return `攻撃予告：【${cardOf(atk.i.key).name}】約${atk.e + f.power}ダメージ${atk.e + f.power >= 20 ? "（受け流し・シールドで迎え撃て）" : ""}${heat}`;
-  if (aff.length > 0) return `${KIND_LABEL[cardOf((aff[0] as Inst).key).kind]}の気配（攻めどき。見とけよ見とけよ〜）${heat}`;
-  return `様子見の構え（しょうがねぇなぁ）${heat}`;
+  if (atk) return `攻撃予告：【${cardOf(atk.i.key).name}】約${atk.e + f.power}ダメージ${atk.e + f.power >= 20 ? "（受け流し・シールドで迎え撃て）" : ""}${heat}${chain}`;
+  if (aff.length > 0) return `${KIND_LABEL[cardOf((aff[0] as Inst).key).kind]}の気配（攻めどき。見とけよ見とけよ〜）${heat}${chain}`;
+  return `様子見の構え（しょうがねぇなぁ）${heat}${chain}`;
 }
 function threatOf(g: Game): { dmg: number } {
   const f = g.c;
@@ -1448,6 +1473,7 @@ const STAGE_TIPS: Record<string, string> = {
 const CARD_TIPS: Record<string, string> = {
   iced: "シールド無視で確定スタン", aa: "攻撃の直後で+6", baka: "HPが相手以下なら貫通", tekozura: "スタン中の相手に+10（アイスティー→手こずらせ）", yarimasu2: "大技の前に", owari: "地形効果をまとめて消す", takuya: "大技予告に合わせて", kanashii: "敵の攻撃力を削る", akushiro: "気力0。あと1足りない時に",
   karate: "攻撃の直後に出すとスタン", omatase: "こ↑こ↓か見とけよの後でコスト-2", sai24: "ぬわの後で+10", senpai: "ミーム技の後で脆弱も付く", dame: "脆弱中の相手ならスタン", atarimae: "弱体＋脆弱で+14", gankou: "熱量4以上で貫通。熱を溜めてから", atsui: "熱量が高いほど強い", combo: "攻撃連鎖の締めに", kintore: "今ラウンドを捨て、次に気力4", kaunta: "大技予告に合わせて", hoshii: "相手の熱量MAX・覚醒に刺す", dechau: "気力0。瀕死なら貫通", yattane: "熱量の使い道その3（回復）", sundome: "シールド10以上には効かない",
+  soudayo: "相手が連鎖中ならそのタイプに便乗。締めの大技の前に",
 };
 function newGame(si: number): Game {
   const st = (STAGES[si] ?? STAGES[0]) as Stage;
@@ -1641,7 +1667,7 @@ export default function App() {
     const s = sanRef.current;
     if (game.round <= 1 && game.san > 30) { s.warned = false; }
     if (game.result === null) setLogOpen(false);
-    if (game.chapter === 2 && !s.warned && s.prev > 30 && game.san <= 30) { s.warned = true; setSanWarn(Date.now()); }
+    if (game.chapter === 2 && !s.warned && s.prev > 30 && game.san <= 30) { s.warned = true; setSanWarn(Date.now()); sfx("whisper"); }
     s.prev = game.san;
   }, [game]);
   useEffect(() => { if (!sanWarn) return undefined; const t = setTimeout(() => setSanWarn(0), 2600); return () => clearTimeout(t); }, [sanWarn]);
@@ -2365,14 +2391,15 @@ export default function App() {
         <div style={panelTitle}>あなたの手札（{g.p.hand.length}/{HAND_MAX}）気力 {g.p.energy}</div>
         {g.p.hand.length > 0 ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {g.p.hand.map((i: Inst) => {
+            {g.p.hand.map((i: Inst, handIdx: number) => {
               const d = cardOf(i.key);
               const cost = costOf(g, d, "p");
-              const chainHint = g.p.chain > 0 && (g.p.chainKind === d.kind || d.key === "assouda");
+              const chainHint = g.p.chain > 0 && (g.p.chainKind === d.kind || d.key === "assouda" || d.key === "soudayo");
               const cut = cost < Math.max(0, d.cost + costShift(g));
               const ok = g.phase === "player" && cost <= g.p.energy;
               const selected = sel === i.uid;
               const drawing = flashUids.has(i.uid);
+              const keyBadge = handIdx < 9 ? String(handIdx + 1) : "";
               return (
                 <div
                   key={i.uid}
@@ -2382,7 +2409,7 @@ export default function App() {
                   onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => onCardKey(e, i.uid)}
                   className={drawing ? "drawFlash" : undefined}
                   style={{
-                    flex: g.p.hand.length > 6 ? "1 1 136px" : "1 1 170px", minWidth: 0, maxWidth: g.p.hand.length > 6 ? 210 : 260, borderRadius: 12, overflow: "hidden",
+                    flex: g.p.hand.length > 6 ? "1 1 136px" : "1 1 170px", minWidth: 0, maxWidth: g.p.hand.length > 6 ? 210 : 260, borderRadius: 12, overflow: "hidden", position: "relative",
                     border: `${selected ? 3 : 2}px solid transparent`,
                     background: `linear-gradient(170deg, color-mix(in srgb, ${kindColor(d.kind)} 20%, ${theme.bg.base}), ${theme.bg.base} 55%) padding-box, linear-gradient(135deg, #fff3b0, #e0a800 25%, #8a5a00 50%, #ffd84a 75%, #fff3b0) border-box`, cursor: g.phase === "player" ? "pointer" : "default",
                     opacity: ok || g.phase !== "player" ? 1 : 0.5, transition: theme.motion.hover,
@@ -2391,6 +2418,7 @@ export default function App() {
                     animation: drawing ? "inmuDrawFlash 0.5s ease-out" : undefined,
                   }}
                 >
+                  {keyBadge ? <span aria-hidden="true" style={{ position: "absolute", top: 4, left: 4, zIndex: 2, width: 18, height: 18, borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.72)", border: "1px solid #ffd84a", color: "#ffd84a", fontSize: 11, fontWeight: 800 }}>{keyBadge}</span> : null}
                   {CARD_ART[d.key] ? <div style={{ height: 72, backgroundImage: `linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.55)), url(${CARD_ART[d.key]})`, backgroundSize: "cover", backgroundPosition: "center 30%", borderBottom: `3px solid ${kindColor(d.kind)}` }} /> : <div style={{ height: 8, background: `linear-gradient(90deg, ${kindColor(d.kind)}, #ffd84a, ${kindColor(d.kind)})`, boxShadow: `0 0 10px ${kindColor(d.kind)}` }} />}
                   <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 4 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
@@ -2430,6 +2458,7 @@ export default function App() {
               {heatToast ? <span role="status" style={{ ...theme.font.label, color: "#ff5a1f", fontWeight: 700 }}>{heatToast}</span> : null}
               <button disabled={g.p.heat < HEAT_MAX || g.p.awaken} onClick={() => heatAct("awaken")} style={{padding:"8px 16px",background:"#666",color:"#fff",border:"none",borderRadius:"4px",cursor:"pointer"}}>野獣覚醒（熱量5→次の攻撃×2・貫通）</button>
               {selDef && !selPlayable ? <span style={{ ...theme.font.label, color: theme.text.warning }}>気力が足りない（そんな装備で大丈夫か？）</span> : null}
+              {selDef && selPlayable ? <span style={{ ...theme.font.label, color: theme.text.secondary }}>出すと残り気力 {g.p.energy - costOf(g, selDef, "p")}{g.p.energy - costOf(g, selDef, "p") > 0 ? "（余り→ターン終了で熱量+1）" : ""}</span> : null}
             </div>
             <div style={{ ...theme.font.caption, color: theme.text.tertiary, paddingTop: 4 }}>
               キーボード： 1-9 カード選択・出す ／ Enter/Space ターン終了 ／ M ミュート ／ Esc 選択解除
