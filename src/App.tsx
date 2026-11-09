@@ -187,7 +187,7 @@ const CAST: CastEntry[] = [
 const STAGE_BG: Record<string, string> = { "1-1": IMG_BG_ROOF, "1-2": IMG_BG_ROOF, "1-3": IMG_KOKO, "1-4": IMG_BG_ROOF, "1-5": IMG_W_HOB, "2-1": IMG_BG_VOID, "2-4": IMG_BG_VOID };
 const IMG_CREDIT2 = "追加画像: 野獣邸写真 Asanagi / Wikimedia Commons（CC0）、一部カード絵と覚醒カットイン・屋上/異界背景・状態アイコン・カード裏面は生成パロディ、1-1・1-2の敵ポートレートと一部カード絵はユーザー提供素材";
 const ENEMY_IMG: Record<string, string> = { "1-1": IMG_U_SOCCER_A, "1-2": IMG_U_SOCCER_B, "1-3": IMG_TDN, "1-4": IMG_YAJU_DAI, "1-5": IMG_E_BEAST, "2-1": IMG_E_OLD, "2-2": IMG_E_COND, "2-3": IMG_E_WALL, "2-4": IMG_E_YOG };
-const CARD_ART: Record<string, string> = { iced: IMG_OMATASE, omatase: IMG_OMATASE, oudou: IMG_ODUO, kokoko: IMG_KOKO, senpai: IMG_KMR, aiten: IMG_MUR, jaken: IMG_MUR, aa: IMG_TDN, baan: IMG_TDN, menkyo: IMG_DB, takuya: IMG_KBTIT, tekozura: IMG_YAJU_DAI, doyagao: IMG_DOYA, yarimasu2: IMG_DOYA, soudayo: IMG_DOYA, owari: IMG_ODUO, atsui: IMG_BG_ROOF, hiyashi: IMG_C_MUGI, ganko2: IMG_ST_STUN, shoggoth: IMG_BG_VOID, meiyari: IMG_BG_VOID, kyushin: IMG_CARD_BACK, miroyo: IMG_ST_VULN, daijoubu: IMG_ST_REGEN, yarimasu: IMG_G_YARIMASU, ossu: IMG_U_SOCCER_B, iiyo: IMG_U_SOCCER_A, karate: IMG_C_SUMO, yohou: IMG_C_YOHOU, mugicha: IMG_C_MUGI, gankou: IMG_C_TIGER, bb: IMG_C_BB };
+const CARD_ART: Record<string, string> = { iced: IMG_OMATASE, omatase: IMG_OMATASE, oudou: IMG_ODUO, kokoko: IMG_KOKO, senpai: IMG_KMR, aiten: IMG_MUR, jaken: IMG_MUR, aa: IMG_TDN, baan: IMG_TDN, menkyo: IMG_DB, takuya: IMG_KBTIT, tekozura: IMG_YAJU_DAI, doyagao: IMG_DOYA, yarimasu2: IMG_DOYA, soudayo: IMG_DOYA, owari: IMG_ODUO, atsui: IMG_BG_ROOF, hiyashi: IMG_C_MUGI, ganko2: IMG_ST_STUN, shoggoth: IMG_BG_VOID, meiyari: IMG_BG_VOID, kyushin: IMG_CARD_BACK, miroyo: IMG_ST_VULN, daijoubu: IMG_ST_REGEN, yarimasu: IMG_G_YARIMASU, ossu: IMG_U_SOCCER_B, iiyo: IMG_U_SOCCER_A, karate: IMG_C_SUMO, yohou: IMG_C_YOHOU, mugicha: IMG_C_MUGI, gankou: IMG_C_TIGER, bb: IMG_C_BB, okanoshita: IMG_C_SUMO, hiyatate: IMG_C_MUGI, mugisan: IMG_C_MUGI, ariari: IMG_C_MUGI, kuun: IMG_C_TIGER, bishi: IMG_CARD_BACK };
 const IMG_CREDIT = "追加画像: Wikimedia Commons — 葛飾北斎「小幡小平次」「雪中虎図」「相撲」、H.P.ラヴクラフトのクトゥルフ素描、フラマリオン版画、ゴッホ「病院の廊下」、歌川豊国「芝居小屋」、1963年の台風天気図（以上パブリックドメイン）／麦茶（CC0）／下北沢駅ホーム © Ryosuke Yagi（CC BY 2.0）／屋上の夕焼け © Uroš Novina（CC BY 2.0）／夜の原宿駅ホーム © Theodore Xu（CC BY-SA 4.0）。いずれも縮小・切り抜き加工。";
 
 type Side = "p" | "c";
@@ -195,7 +195,7 @@ type Kind = "atk" | "def" | "heal" | "meme" | "chaos";
 type ModKind = "halfAtk" | "costUp" | "poison" | "noDraw" | "healBoost" | "healInvert" | "energyUp" | "dmgDouble" | "costDown" | "san" | "nameless" | "stars" | "mad";
 type Phase = "player" | "cpu" | "collapse" | "end";
 type Who = Side | "col" | "sys";
-type SfxName = Kind | "collapse" | "win" | "lose" | "start" | "pass" | "whisper" | "impact" | "crit" | "hype" | "awaken" | "draw" | "chain" | "heat" | "stun" | "debuff" | "regen" | "chapter" | "slam" | "quake";
+type SfxName = Kind | "collapse" | "win" | "lose" | "start" | "pass" | "whisper" | "impact" | "crit" | "hype" | "awaken" | "draw" | "chain" | "heat" | "stun" | "debuff" | "regen" | "chapter" | "slam" | "quake" | "shield" | "san";
 
 interface CardDef { key: string; name: string; kind: Kind; cost: number; text: string; flavor: string; copies: number }
 interface Inst { uid: number; key: string }
@@ -210,7 +210,7 @@ interface Game {
   result: "win" | "lose" | "draw" | null; last: LastCollapse | null; uid: number;
   playSeq: number; playKind: Kind | null;
   stage: number; chapter: 1 | 2; san: number; star: number; fc: number;
-  pile?: string[];
+  pile?: string[]; plays: number;
 }
 interface Stage { chapter: 1 | 2; code: string; area: string; enemy: string; hp: number; power: number; boss: boolean; tiles: string[]; intro: string[]; win: string[]; pic?: string | undefined }
 interface Scene { tag: string; title: string; lines: string[]; img: "title" | "hero" | "collapse"; eldritch: boolean; pic?: string | undefined }
@@ -385,6 +385,17 @@ function sfx(name: SfxName): void {
       tone(c, t, 41, 1.3, "sine", 0.3, 30);
       tone(c, t + 0.3, 233, 0.6, "sawtooth", 0.06, 60);
       break;
+    case "shield":
+      tone(c, t, 740, 0.12, "triangle", 0.14);
+      tone(c, t + 0.05, 988, 0.18, "triangle", 0.1);
+      tone(c, t + 0.08, 1480, 0.22, "sine", 0.06);
+      break;
+    case "san":
+      tone(c, t, 73, 0.7, "sine", 0.16, 55);
+      tone(c, t, 311, 0.55, "sawtooth", 0.04, 220);
+      tone(c, t + 0.12, 932, 0.4, "sine", 0.03, 698);
+      noise(c, t, 0.45, 0.1, 800, 120);
+      break;
     default:
       break;
   }
@@ -473,6 +484,8 @@ const CARDS: CardDef[] = [
   { key: "kuun", name: "クゥーン…", kind: "def", cost: 1, text: "シールド+7、相手の攻撃力-1", flavor: "カラスの鳴き声。なぜか相手が弱る", copies: 1 },
   { key: "bishi", name: "微粒子レベルで存在している", kind: "meme", cost: 1, text: "1枚ドロー、次の防御×1.3", flavor: "観測するまで存在しない（量子淫夢論）", copies: 1 },
   { key: "soudayo", name: "そうだよ（便乗）", kind: "meme", cost: 0, text: "相手の連鎖種別に便乗（なければミーム）。連鎖継続＋1枚ドロー＋熱量+1", flavor: "便乗は最強の戦術。そうだよ（便乗）", copies: 2 },
+  { key: "okanoshita", name: "おかのした（連鎖精算）", kind: "def", cost: 0, text: "連鎖を盾に変える。シールド+連鎖×6（最低4）。連鎖リセット。連鎖3以上なら熱量+1", flavor: "了承して畳む。おかのした（精算）", copies: 1 },
+  { key: "hiyatate", name: "冷えてるか〜？（熱を盾に）", kind: "def", cost: 1, text: "熱量1消費でシールド+14。熱がなければシールド+5", flavor: "熱を麦茶に変えて胸板にする。冷えてますよ〜", copies: 1 },
 ];
 
 const CARDS2: CardDef[] = [
@@ -484,6 +497,7 @@ const CARDS2: CardDef[] = [
   { key: "ichiban", name: "それ一番言われてるから", kind: "atk", cost: 2, text: "18ダメージ、SAN-3", flavor: "深淵で一番擦られている返し", copies: 1 },
   { key: "wakan", name: "これもうわかんねぇな", kind: "chaos", cost: 1, text: "相手を2ラウンド弱体、汚染1回、SAN-5", flavor: "理解を放棄すると強い（小並感）", copies: 1 },
   { key: "shoggoth", name: "ショゴス先輩（テケリ・リ）", kind: "atk", cost: 3, text: "26ダメージ、SAN-5", flavor: "不定形の先輩が全方向から迫る", copies: 1 },
+  { key: "mugisan", name: "正気の麦茶（冷えてるか〜？）", kind: "heal", cost: 1, text: "熱量1消費でSAN+12＆HP+4。熱がなければSAN+4、HP+4", flavor: "深淵でも麦茶は効く（小並感）", copies: 1 },
 ];
 const ALL_CARDS: CardDef[] = [...CARDS, ...CARDS2];
 
@@ -989,6 +1003,9 @@ const EVENTS: CollapseEvent[] = [
   { name: "おなしゃす（世界からの一礼）", desc: "世界が頭を下げた。双方シールド+5、田所1枚ドロー", run: (g: Game) => { g.p.shield += 5; g.c.shield += 5; draw(g, "p", 1, true); } },
   { name: "大会近いからね、しょうがないね", desc: "追い込みの気合。次のラウンド気力+1、双方シールド+4", run: (g: Game) => { addMod(g, "energyUp", 1, "気力+1"); g.p.shield += 4; g.c.shield += 4; } },
   { name: "クチアケーナ・ホラ（天啓）", desc: "口が開いて語録が入る。双方1枚ドロー、熱量+1", run: (g: Game) => { draw(g, "p", 1, true); draw(g, "c", 1, true); bump(g.p, 1); bump(g.c, 1); } },
+  { name: "んにゃぴ（世界が寝ぼけた）", desc: FLAVOR, run: (_g: Game) => undefined },
+  { name: "「いいぞもっとやれ」の野次が飛ぶ", desc: "観客が煽る。双方熱量+1、田所シールド+3", run: (g: Game) => { bump(g.p, 1); bump(g.c, 1); g.p.shield += 3; } },
+  { name: "24歳の学生証が光った（偽造）", desc: "身分が通った（大嘘）。田所HP+6、1枚ドロー", run: (g: Game) => { healRaw(g, "p", 6); draw(g, "p", 1, true); } },
 ];
 
 const EVENTS2: CollapseEvent[] = [
@@ -1036,6 +1053,18 @@ const EVENTS2: CollapseEvent[] = [
     g.p.chain = Math.max(1, g.p.chain + 2);
     bump(g.p, 1);
   } },
+  { name: "深淵の扉が「入って、どうぞ」", desc: "招かれた弱点。田所は弱体・脆弱、敵は脆弱2R、SAN-4", run: (g: Game) => {
+    g.p.weak = Math.max(g.p.weak, 2);
+    g.p.vuln = Math.max(g.p.vuln, 2);
+    g.c.vuln = Math.max(g.c.vuln, 2);
+    sanDelta(g, -4);
+  } },
+  { name: "旧き神も「あっ、そっかぁ…」", desc: "納得して畳む。双方の連鎖リセット、SAN+5", run: (g: Game) => {
+    g.p.chain = 0; g.p.chainKind = null; g.p.lastKey = null;
+    g.c.chain = 0; g.c.chainKind = null; g.c.lastKey = null;
+    sanDelta(g, 5);
+  } },
+  { name: "星辰に「オッスお願いしまーす」の礼", desc: "宇宙的な挨拶。田所シールド+5、熱量+1、SAN-3", run: (g: Game) => { g.p.shield += 5; bump(g.p, 1); sanDelta(g, -3); } },
 ];
 function evList(g: Game): CollapseEvent[] { return g.chapter === 2 ? EVENTS2 : EVENTS; }
 
@@ -1090,25 +1119,25 @@ function healSide(g: Game, side: Side, amt: number): string {
   return `HP+${f.hp - before}`;
 }
 
-const ROUND_CALLS: string[] = ["王道を征く（ソープ系）", "こ↑こ↓から始めるゾ", "おっ、開いてんじゃ〜ん", "入って、どうぞ", "じゃあまず、年齢を教えてくれるかな？", "お前らクルルァについてこい", "よし、じゃあぶち込んでやるぜ！（カードを）", "つべこべ言わずに来いホイ", "いざ鎌倉！という高揚感", "今日はいっぱい飲むゾ〜（麦茶）", "はい、ヨロシクぅ！", "もう始まってる！", "続きいくよぉ〜", "オッスオッス！", "聖地・下北沢から生中継", "大会近いからね、しょうがないね", "オッスお願いしまーす", "ヤッタネ！（まだ何もしてない）", "筋トレ終わったし、やりますか", "下北沢の野獣、参上（迫真）", "お前のものが欲しいとか？", "本当に出ちゃうよ！（予告）", "24歳、学生です（大嘘）", "いいよ！こいよ！", "見とけよ見とけよ〜", "本番はこれから", "あくしろよ", "おなしゃす（小声）", "そんな装備で大丈夫か？", "ほらいくどー！", "じゃけん次行きましょうね〜", "時よ止まれ（ザ・ワールド）", "夏の暑い日、気温114514℃", "喉渇いた…喉渇かない？", "暑いねぇ、汗だくだくだよ", "まずウチさぁ、屋上あんだけど…焼いてかない？", "アイスティーしかなかったけどいいかな？", "ムシムシするなぁ（迫真）", "灼熱の屋上でオッスお願いしまーす"];
-const HOT_LINES: string[] = ["バッチェ冷えてますよ（嘘）", "アツゥイ！", "あ＾〜うめぇなぁ！（麦茶）", "ビール！ビール！", "喉がイキスギィ！", "屋上が鉄板焼きに", "冷えてるか〜？（ぬるい）", "汗でカードがふやけた", "ぬわあああああん暑いもおおおおおん", "はえ〜（蒸発）", "世界が汗で溶けていく", "喉渇いた…喉渇かない？", "夏の暑い日、地面からかげろう", "麦茶が一瞬で蒸発した", "チカレタ…（熱中症）", "ムシムシして崩壊が加速", "屋上のタイルが灼熱で割れた", "汗が滝のように流れる（迫真）", "アスファルトが溶けて足跡が残る", "セミの声が114514デシベル", "エアコンが負けを認めた", "キンキンのはずが湯になってる", "再生麦茶が沸騰した", "バッチェ、もう熱湯ですよ", "冷えてるか〜？（熱い）", "汗で語録がにじむ"];
-const HIT_LINES: string[] = ["イキスギィ！", "ンアッー！", "最高やな！", "いいねぇー", "ファッ⁉", "痛いですね…これは痛い", "Foo↑気持ちぃ〜", "あ〜、いいっすね〜", "たまげたなあ", "世界一やお前！", "嘘つけ絶対効いてたゾ", "やっぱり王道を征く", "ヌッ！", "やりますねぇ！", "ヤッタネ！", "本当に出ちゃうよ！", "迫真の一撃", "筋トレの成果が出たな", "いいよ！こいよ！", "いいぞもっとやれ", "ファッ！？", "はっきりわかんだね", "いいゾ〜これ", "当たり前だよなぁ？", "これもうわかんねぇな", "まずいですよ！", "おなしゃす！", "効いてる効いてる（察し）", "ほらいくどー！", "痛いですね本当に痛い", "あ〜イキスギィ（追撃）"];
-const PASS_LINES: string[] = ["ぬわあん疲れたもん", "おかのした", "んにゃぴ", "ヘーキヘーキ", "しょうがねぇなぁ（悟空）", "これもうわかんねぇな", "あっ、そっかぁ…", "いや〜キツイっす（素）", "こいついつも疲れてんな", "悲しいなぁ…", "どうすっかな〜俺もな〜", "知らねーよ、そんなの", "ｸｩｰﾝ...", "はぁ〜〜〜（クソデカため息）", "しょうがねぇなぁ", "筋トレのインターバル", "プロテイン補給（麦茶割り）", "野獣の眼光で様子見", "喉渇いた…喉渇かない？", "ちょっと休憩（帰宅部）", "ぬわあああん疲れたもおおおん", "様子見（突然の休憩）", "チカレタ…", "麦茶ゴクゴク（冷えてるか〜？）", "暑すぎて動けねぇ…", "日陰で汗を拭く", "ぬわああん暑かったもおおん"];
+const ROUND_CALLS: string[] = ["王道を征く（ソープ系）", "こ↑こ↓から始めるゾ", "おっ、開いてんじゃ〜ん", "入って、どうぞ", "じゃあまず、年齢を教えてくれるかな？", "お前らクルルァについてこい", "よし、じゃあぶち込んでやるぜ！（カードを）", "つべこべ言わずに来いホイ", "いざ鎌倉！という高揚感", "今日はいっぱい飲むゾ〜（麦茶）", "はい、ヨロシクぅ！", "もう始まってる！", "続きいくよぉ〜", "オッスオッス！", "聖地・下北沢から生中継", "大会近いからね、しょうがないね", "オッスお願いしまーす", "ヤッタネ！（まだ何もしてない）", "筋トレ終わったし、やりますか", "下北沢の野獣、参上（迫真）", "お前のものが欲しいとか？", "本当に出ちゃうよ！（予告）", "24歳、学生です（大嘘）", "いいよ！こいよ！", "見とけよ見とけよ〜", "本番はこれから", "あくしろよ", "おなしゃす（小声）", "そんな装備で大丈夫か？", "ほらいくどー！", "じゃけん次行きましょうね〜", "時よ止まれ（ザ・ワールド）", "夏の暑い日、気温114514℃", "喉渇いた…喉渇かない？", "暑いねぇ、汗だくだくだよ", "まずウチさぁ、屋上あんだけど…焼いてかない？", "アイスティーしかなかったけどいいかな？", "ムシムシするなぁ（迫真）", "灼熱の屋上でオッスお願いしまーす", "おかのした！（開幕）", "流行らせコラ！（開幕）", "微粒子レベルで始まっている", "んにゃぴ…（寝起き）", "クチアケーナ、カード出していけ"];
+const HOT_LINES: string[] = ["バッチェ冷えてますよ（嘘）", "アツゥイ！", "あ＾〜うめぇなぁ！（麦茶）", "ビール！ビール！", "喉がイキスギィ！", "屋上が鉄板焼きに", "冷えてるか〜？（ぬるい）", "汗でカードがふやけた", "ぬわあああああん暑いもおおおおおん", "はえ〜（蒸発）", "世界が汗で溶けていく", "喉渇いた…喉渇かない？", "夏の暑い日、地面からかげろう", "麦茶が一瞬で蒸発した", "チカレタ…（熱中症）", "ムシムシして崩壊が加速", "屋上のタイルが灼熱で割れた", "汗が滝のように流れる（迫真）", "アスファルトが溶けて足跡が残る", "セミの声が114514デシベル", "エアコンが負けを認めた", "キンキンのはずが湯になってる", "再生麦茶が沸騰した", "バッチェ、もう熱湯ですよ", "冷えてるか〜？（熱い）", "汗で語録がにじむ", "114514℃のアスファルト", "アイスティーが湯気を立てた", "プロテインが発酵した（迫真）"];
+const HIT_LINES: string[] = ["イキスギィ！", "ンアッー！", "最高やな！", "いいねぇー", "ファッ⁉", "痛いですね…これは痛い", "Foo↑気持ちぃ〜", "あ〜、いいっすね〜", "たまげたなあ", "世界一やお前！", "嘘つけ絶対効いてたゾ", "やっぱり王道を征く", "ヌッ！", "やりますねぇ！", "ヤッタネ！", "本当に出ちゃうよ！", "迫真の一撃", "筋トレの成果が出たな", "いいよ！こいよ！", "いいぞもっとやれ", "ファッ！？", "はっきりわかんだね", "いいゾ〜これ", "当たり前だよなぁ？", "これもうわかんねぇな", "まずいですよ！", "おなしゃす！", "効いてる効いてる（察し）", "ほらいくどー！", "痛いですね本当に痛い", "あ〜イキスギィ（追撃）", "痛いんだよおおおお！", "効いてないんだよなぁ？（効いてる）", "バァン！（直撃）", "手こずらせやがってよぉ"];
+const PASS_LINES: string[] = ["ぬわあん疲れたもん", "おかのした", "んにゃぴ", "ヘーキヘーキ", "しょうがねぇなぁ（悟空）", "これもうわかんねぇな", "あっ、そっかぁ…", "いや〜キツイっす（素）", "こいついつも疲れてんな", "悲しいなぁ…", "どうすっかな〜俺もな〜", "知らねーよ、そんなの", "ｸｩｰﾝ...", "はぁ〜〜〜（クソデカため息）", "しょうがねぇなぁ", "筋トレのインターバル", "プロテイン補給（麦茶割り）", "野獣の眼光で様子見", "喉渇いた…喉渇かない？", "ちょっと休憩（帰宅部）", "ぬわあああん疲れたもおおおん", "様子見（突然の休憩）", "チカレタ…", "麦茶ゴクゴク（冷えてるか〜？）", "暑すぎて動けねぇ…", "日陰で汗を拭く", "ぬわああん暑かったもおおん", "1日…350円の駐車場で休む", "ありますあります（休憩）", "デデドン！（一旦停止）"];
 
 const ENEMY_LINES: Record<string, string[]> = {
-  "1-1": ["まずいですよ！", "やめてくださいよ本当に！", "すいません許してください！なんでもしますから！", "えぇ…（困惑）", "あっ、そっかぁ…", "僕は違います（半ギレ）", "早く帰って宿題しなきゃ（使命感）"],
+  "1-1": ["まずいですよ！", "やめてくださいよ本当に！", "すいません許してください！なんでもしますから！", "えぇ…（困惑）", "あっ、そっかぁ…", "僕は違います（半ギレ）", "早く帰って宿題しなきゃ（使命感）", "僕は違いますからね！"],
   "1-2": ["おっ、開いてんじゃ〜ん", "じゃけん夜行きましょうね〜", "この辺にぃ、うまいラーメン屋の屋台、来てるらしいっすよ", "お前さKMRさ…（説教）", "そうだよ（便乗）", "ゾ〜", "MURさん夜中腹減んないすか？（自問）"],
   "1-3": ["アッー！", "ンアッー！", "痛いですね…これは痛い", "おいゴルァ！降りろ！免許持ってんのか！（幻聴）", "バァン！（追突）", "免許証返してください（DBの声）", "あーっ！おぅううっす！"],
-  "1-4": ["おう、入れ", "おう、まあ座れ", "お前よ、なんで呼び出されたか分かるか？", "生意気なんだよてめぇ…", "手こずらせやがってよぉ", "挨拶とかねえだろ？", "王道を征く"],
+  "1-4": ["おう、入れ", "おう、まあ座れ", "お前よ、なんで呼び出されたか分かるか？", "生意気なんだよてめぇ…", "手こずらせやがってよぉ", "挨拶とかねえだろ？", "王道を征く", "お前、名前なんていったっけ"],
   "1-5": ["見とけよ見とけよ〜", "おまたせ！アイスティーしかなかったけどいいかな？", "まずうちさぁ、屋上…あんだけど、焼いてかない？", "喉渇いた…喉渇かない？", "入って、どうぞ", "ありますあります", "いいよ、来いよ！"],
-  "2-1": ["いあ いあ", "ｸｩｰﾝ...", "微粒子レベルで存在している…？", "親の顔より見た光景"],
-  "2-2": ["あくしろよ", "おかのした", "デデドン！（絶望）", "終点は114514駅です"],
-  "2-3": ["ｳｰﾝ...", "実家のような安心感", "したりしなかったりしろ", "ピトン…ポチョン…（明鏡止水）"],
-  "2-4": ["そして天は鳴き、大地は震えるだろうね", "それ一番言われてるから", "†悔い改めて†", "ホモの魔の手からは絶対に逃れられない！"],
+  "2-1": ["いあ いあ", "ｸｩｰﾝ...", "微粒子レベルで存在している…？", "親の顔より見た光景", "テケリ・リ（小声）"],
+  "2-2": ["あくしろよ", "おかのした", "デデドン！（絶望）", "終点は114514駅です", "もう始まってる！（異界）"],
+  "2-3": ["ｳｰﾝ...", "実家のような安心感", "したりしなかったりしろ", "ピトン…ポチョン…（明鏡止水）", "んにゃぴ（深淵）"],
+  "2-4": ["そして天は鳴き、大地は震えるだろうね", "それ一番言われてるから", "†悔い改めて†", "ホモの魔の手からは絶対に逃れられない！", "入って、どうぞ（終焉）"],
 };
-const THINK_LINES: string[] = ["あくしろよ", "どうすっかな〜俺もな〜", "これがなかなか…難しいねんな…", "ピトン…ポチョン…（明鏡止水）", "んにゃぴ", "いいよ、来いよ！"];
-const RESULT_WIN: string[] = ["ドヤ顔先輩も満足げ。やりますねぇ！", "最高やな！ 世界一やお前！", "王道を征く勝利（迫真）", "いいねぇー。Foo↑気持ちぃ〜"];
-const RESULT_LOSE: string[] = ["悲しいなぁ…（諸行無常）", "ぬわあん疲れたもん", "いや〜キツイっす（素）", "†悔い改めて† もう一回"];
+const THINK_LINES: string[] = ["あくしろよ", "どうすっかな〜俺もな〜", "これがなかなか…難しいねんな…", "ピトン…ポチョン…（明鏡止水）", "んにゃぴ", "いいよ、来いよ！", "しょうがねぇなぁ", "これもうわかんねぇな（思考）"];
+const RESULT_WIN: string[] = ["ドヤ顔先輩も満足げ。やりますねぇ！", "最高やな！ 世界一やお前！", "王道を征く勝利（迫真）", "いいねぇー。Foo↑気持ちぃ〜", "ヤッタネ！（汗だくの報告）", "おかのした！ いいゾ〜これ"];
+const RESULT_LOSE: string[] = ["悲しいなぁ…（諸行無常）", "ぬわあん疲れたもん", "いや〜キツイっす（素）", "†悔い改めて† もう一回", "あっ、そっかぁ…（敗因）", "ダメみたいですね（諦観）"];
 
 function playCard(g: Game, side: Side, uid: number): void {
   const f = g[side];
@@ -1133,7 +1162,7 @@ function playCard(g: Game, side: Side, uid: number): void {
   else { f.chain = 1; f.chainKind = d.kind; }
   f.lastKey = d.key;
   f.played++;
-  if (side === "p") g.pile = [...(g.pile ?? []), d.name].slice(-3);
+  if (side === "p") { g.plays += 1; g.pile = [...(g.pile ?? []), d.name].slice(-3); }
   const ch = f.chain;
   const cb = ch >= 2 ? ch - 1 : 0;
   g.playSeq++;
@@ -1209,7 +1238,10 @@ function playCard(g: Game, side: Side, uid: number): void {
     case "aiten": { const s = Math.floor(o.shield / 2); o.shield -= s; f.shield += s; g.boost += 1; log(g, side, `→ 開いてたシールドを${s}奪った。次の崩壊+1`); break; }
     case "atarimae": hit(16 + (o.weak > 0 && o.vuln > 0 ? 14 : o.weak > 0 || o.vuln > 0 ? 8 : 0), false); break;
     case "yohou": { g.fc = rand(evList(g).length); bump(f, 1); log(g, side, `→ 崩壊予報を書き換えた：次は【${evList(g)[g.fc]?.name ?? "？"}】、熱量+1`); break; }
-    case "sundome": hit(6, false); if (o.hp > 0) applyStun(g, other(side), side); break;
+    case "sundome":
+      if (o.shield >= 10) log(g, side, `→ ${o.name}の胸板（シールド${o.shield}）に寸止めが届かない。効いてないんだよなぁ`);
+      else { hit(6, false); if (o.hp > 0) applyStun(g, other(side), side); }
+      break;
     case "mugicha": { f.regen = Math.max(f.regen, 3); const c = f.vuln > 0 ? "脆弱" : f.weak > 0 ? "弱体" : ""; if (f.vuln > 0) f.vuln = 0; else f.weak = 0; log(g, side, `→ 再生3R${c ? `、${c}解除` : ""}。冷えてますよ〜`); break; }
     case "assouda": { const n = draw(g, side, 1, false); log(g, side, `→ 連鎖継続（${ch}）、${n}枚ドロー。あっ、そうだ（何が）`); break; }
     case "soudayo": {
@@ -1269,6 +1301,32 @@ function playCard(g: Game, side: Side, uid: number): void {
     case "mazui": f.shield += 10; o.power = Math.max(0, o.power - 3); log(g, side, `→ シールド+10、${o.name}の次ターン攻撃力-3（まずいですよ！）`); break;
     case "oraora": hit(16, f.shield >= 15); break;
     case "yurusane": hit(18, false); collapse(g, 1, "もう許さねぇ"); f.hp = Math.max(1, f.hp - 6); log(g, side, `→ 怒りの代償：自分のHP-6、世界崩壊+1`); break;
+    case "sugoi": { const h = healSide(g, side, 9); f.mult = Math.min(3, f.mult * 1.2); log(g, side, `→ ${h}、次の攻撃×${f.mult.toFixed(2)}。すっごい綺麗…`); break; }
+    case "ichinichi": f.shield += 11; f.bank += 1; log(g, side, "→ シールド+11、次ラウンド気力+1（1日…350円！）"); break;
+    case "iikana": { o.weak = Math.max(o.weak, 2); const n = draw(g, side, 1, false); log(g, side, `→ ${o.name}は2ラウンド弱体、${n}枚ドロー。いいかな？`); break; }
+    case "ariari": { const h = healSide(g, side, 8); const n = draw(g, side, 1, false); log(g, side, `→ ${h}、${n}枚ドロー。ありますあります`); break; }
+    case "ryukou": f.mult = Math.min(3, f.mult * 1.8); bump(f, 1); log(g, side, `→ 次の攻撃×${f.mult.toFixed(2)}、熱量+1。流行らせコラ！`); break;
+    case "kuun": { f.shield += 7; o.power = Math.max(0, o.power - 1); log(g, side, `→ シールド+7、${o.name}の攻撃力-1。クゥーン…`); break; }
+    case "bishi": { const n = draw(g, side, 1, false); f.shield += 9; log(g, side, `→ ${n}枚ドロー、観測でシールド+9（防御×1.3）。微粒子レベルで存在している`); break; }
+    case "okanoshita": {
+      const chn = f.chain;
+      const sh = Math.max(4, chn * 6);
+      f.shield += sh;
+      if (chn >= 3) bump(f, 1);
+      f.chain = 0; f.chainKind = null;
+      log(g, side, `→ 連鎖${chn}を精算：シールド+${sh}${chn >= 3 ? "、熱量+1" : ""}。おかのした`);
+      break;
+    }
+    case "hiyatate":
+      if (f.heat >= 1) { f.heat -= 1; f.shield += 14; log(g, side, "→ 熱量1を盾に：シールド+14。冷えてるか〜？"); }
+      else { f.shield += 5; log(g, side, "→ 熱がないのでシールド+5（ぬるい）"); }
+      break;
+    case "mugisan": {
+      const h = healSide(g, side, 4);
+      if (f.heat >= 1) { f.heat -= 1; if (side === "p") sanDelta(g, 12); log(g, side, `→ 熱量1で正気補給：${h}、SAN+12`); }
+      else { if (side === "p") sanDelta(g, 4); log(g, side, `→ ${h}、SAN+4（熱不足）`); }
+      break;
+    }
     default: break;
   }
   if (cb > 0 && o.hp > 0) {
@@ -1399,7 +1457,11 @@ function cpuScore(g: Game, i: Inst): number {
     if (i.key === "gankou" && f.heat < 3) s -= 10;
     if ((i.key === "sundome" || i.key === "karate") && o.shield < 10 && o.stun === 0) s += 6;
   } else if (d.kind === "heal") s = has(g, "healInvert") ? -10 : (f.max - f.hp) / 3 + (f.vuln > 0 || f.weak > 0 ? 4 : 0);
-  else if (d.kind === "def") s = 6 + (f.hp < f.max * 0.5 ? 8 : 0) - f.shield / 4;
+  else if (d.kind === "def") {
+    s = 6 + (f.hp < f.max * 0.5 ? 8 : 0) - f.shield / 4;
+    if (i.key === "okanoshita") s += f.chain * 3;
+    if (i.key === "hiyatate" && f.heat >= 1) s += 4;
+  }
   else if (d.kind === "meme") {
     if (i.key === "yarimasu" || i.key === "yarimasu2" || i.key === "kokoko" || i.key === "hakkiri") s = f.mult < 2 && f.hand.some((x: Inst) => x.uid !== i.uid && estimate(g, x.key) > 0) ? 9 : 2;
     else if (i.key === "senpai" || i.key === "miroyo") s = o.vuln > 0 && o.weak > 0 ? 1 : 10;
@@ -1480,6 +1542,16 @@ const CARD_TIPS: Record<string, string> = {
   soudayo: "相手が連鎖中ならそのタイプに便乗。締めの大技の前に",
   mugicha: "再生3R＋デバフ1つ解除。暑さ対策の基本",
   hiyashi: "即HP+8と熱量+1。連鎖の合間に熱を足す",
+  okanoshita: "連鎖を盾に変える。3連鎖以上なら熱も残る",
+  hiyatate: "熱量の5択目：盾に変える。大技予告に合わせて",
+  mugisan: "熱をSANに変える。発狂前の保険",
+  sugoi: "回復しながら倍率。攻撃の前に",
+  ichinichi: "筋トレと同じ貯金＋厚めの盾",
+  iikana: "弱体を貼ってドロー。当たり前だよなぁ？の前に",
+  ariari: "回復とドローの両取り",
+  ryukou: "やりますねぇ強化版に近い。大技の前に",
+  kuun: "盾と敵攻撃力削り",
+  bishi: "ドローしつつ盾。連鎖のつなぎ",
 };
 function newGame(si: number): Game {
   const st = (STAGES[si] ?? STAGES[0]) as Stage;
@@ -1488,7 +1560,7 @@ function newGame(si: number): Game {
     phase: "player", round: 0, p: blank("田所浩二"), c: blank(st.enemy, st.hp), mods: [],
     tiles: st.tiles.map((n: string) => ({ name: n, alive: true })), log: [], clog: [], boost: 0,
     endless: false, collapses: 0, result: null, last: null, uid: 0, playSeq: 0, playKind: null,
-    stage: si, chapter: st.chapter, san: 100, star: 0, fc: 0, pile: [],
+    stage: si, chapter: st.chapter, san: 100, star: 0, fc: 0, pile: [], plays: 0,
   };
   g.fc = rand(evList(g).length);
   g.c.power = st.power;
@@ -1622,9 +1694,9 @@ interface Fx {
   cut: { k: number; text: string; color: string } | null; pops: Pop[]; party: { k: number; items: Particle[] } | null; awaken: number | null; scan: number | null;
   combo: { k: number; n: number; color: string } | null; status: { k: number; text: string; color: string; icon: string } | null; chapter: { k: number; text: string; sub: string } | null;
 }
-interface Seen { play: number; col: number; res: string | null; init: boolean; php: number; chp: number; pheat: number; cheat: number; pch: number; cch: number; paw: boolean; caw: boolean; pst: number; cst: number; pvu: number; cvu: number; prg: number; crg: number; phand: number; stg: number }
+interface Seen { play: number; col: number; res: string | null; init: boolean; php: number; chp: number; pheat: number; cheat: number; pch: number; cch: number; paw: boolean; caw: boolean; pst: number; cst: number; pvu: number; cvu: number; prg: number; crg: number; phand: number; stg: number; psh: number; csh: number; san: number }
 const FX0: Fx = { wrap: null, flash: null, banner: null, cut: null, pops: [], party: null, awaken: null, scan: null, combo: null, status: null, chapter: null };
-const SEEN0: Seen = { play: 0, col: 0, res: null, init: false, php: 0, chp: 0, pheat: 0, cheat: 0, pch: 0, cch: 0, paw: false, caw: false, pst: 0, cst: 0, pvu: 0, cvu: 0, prg: 0, crg: 0, phand: 0, stg: -1 };
+const SEEN0: Seen = { play: 0, col: 0, res: null, init: false, php: 0, chp: 0, pheat: 0, cheat: 0, pch: 0, cch: 0, paw: false, caw: false, pst: 0, cst: 0, pvu: 0, cvu: 0, prg: 0, crg: 0, phand: 0, stg: -1, psh: 0, csh: 0, san: 100 };
 const CRIT_LINES: string[] = ["会心！ イキスギィ！", "致命傷！ ンアッー！", "痛いんだよおおおおおお！", "バァン！（大破）", "たまげたなあ（会心）", "三人に勝てるわけないだろ！", "クリティカル！ ファッ！？", "会心！ いいぞもっとやれ", "致命傷！ まずいですよ！", "114514点の一撃！", "痛いですね…これは痛い", "ファッ！？ 骨まで響いた", "会心の迫真！"];
 const HYPE_LINES: string[] = ["王道を征く！", "やりますねぇ！（二重）", "Foo↑", "こ↑こ↓が熱い", "最高やな！", "いいねぇー", "流行らせコラ！", "馬鹿野郎お前俺は勝つぞお前！", "やりますねぇ！", "いいぞもっとやれ", "いいゾ〜これ", "見とけよ見とけよ〜", "ほらいくどー！", "当たり前だよなぁ？", "アツゥイ！", "燃えてきたぜ（迫真）", "これもうわかんねぇな（熱）"];
 const PARTICLE_CHARS: string[] = ["★", "114514", "✦", "810", "やったぜ", "●", "いいゾ〜", "✧", "364364", "！？", "🔥", "アツゥイ", "931", "💦"];
@@ -1752,7 +1824,7 @@ export default function App() {
     if (!game) { seen.current = { ...SEEN0 }; return undefined; }
     const s = seen.current;
     const timers: ReturnType<typeof setTimeout>[] = [];
-    seen.current = { play: game.playSeq, col: game.collapses, res: game.result, init: true, php: game.p.hp, chp: game.c.hp, pheat: game.p.heat, cheat: game.c.heat, pch: game.p.chain, cch: game.c.chain, paw: game.p.awaken, caw: game.c.awaken, pst: game.p.stun, cst: game.c.stun, pvu: game.p.vuln, cvu: game.c.vuln, prg: game.p.regen, crg: game.c.regen, phand: game.p.hand.length, stg: game.stage };
+    seen.current = { play: game.playSeq, col: game.collapses, res: game.result, init: true, php: game.p.hp, chp: game.c.hp, pheat: game.p.heat, cheat: game.c.heat, pch: game.p.chain, cch: game.c.chain, paw: game.p.awaken, caw: game.c.awaken, pst: game.p.stun, cst: game.c.stun, pvu: game.p.vuln, cvu: game.c.vuln, prg: game.p.regen, crg: game.c.regen, phand: game.p.hand.length, stg: game.stage, psh: game.p.shield, csh: game.c.shield, san: game.san };
     if (!s.init) return undefined;
     const cat = theme.dataviz.categorical;
     const red = theme.dataviz.negative;
@@ -1828,6 +1900,8 @@ export default function App() {
     const status = (ms: number, text: string, color: string, icon: string): void => { const k = nk(); put(ms, 1500, { status: { k, text, color, icon } }, (f: Fx) => (f.status && f.status.k === k ? { status: null } : null)); };
     if (chP || chC) { const n = chP ? game.p.chain : game.c.chain; strip(hitAt, n, chP ? cool : hot); at(hitAt + 40, () => sfx("chain")); }
     if (heatP || heatC) at(hitAt + 40, () => sfx("heat"));
+    if (game.p.shield > s.psh || game.c.shield > s.csh) at(hitAt + 50, () => sfx("shield"));
+    if (game.chapter === 2 && game.san !== s.san) at(hitAt + 80, () => sfx("san"));
     const pName = "田所";
     const cName = game.c.name;
     const stS: Side | null = game.c.stun > s.cst ? "c" : game.p.stun > s.pst ? "p" : null;
@@ -1894,6 +1968,7 @@ export default function App() {
       if (!(e instanceof KeyboardEvent)) return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const key = e.key;
+      if ((key === "Enter" || key === " ") && e.target instanceof HTMLElement && (e.target.closest("button") || e.target.closest("[role=button]"))) return;
       if (key >= "1" && key <= "9") {
         const idx = parseInt(key, 10) - 1;
         if (idx < game.p.hand.length) {
@@ -2014,7 +2089,7 @@ export default function App() {
       if (!prev || prev.phase !== "player") return prev;
       const g = cloneG(prev);
       endTurn(g, "p");
-      g.phase = "cpu";
+      if (!checkEnd(g)) g.phase = "cpu";
       return g;
     });
   }, []);
@@ -2122,7 +2197,7 @@ export default function App() {
       "第2章ではSAN（正気度）が登場。汚染のたびに減り、50未満で手札上限4、25未満で3、0で発狂",
       "ボス戦は偶数ラウンドの終わりに崩壊が1回増える",
       "戦術：敵の意図（攻撃予告）が見える。大技には受け流し、覚醒には「お前のものが欲しいとか？」",
-      "戦術：筋トレは今の気力を次ラウンドに貯金。熱量は気合・覚醒・眼光・ヤッタネ（回復）の4択",
+      "戦術：筋トレは今の気力を次ラウンドに貯金。熱量は気合・覚醒・眼光・ヤッタネ（回復）・熱を盾の5択。連鎖はおかのしたで盾に精算できる",
     ];
     return (
       <div style={root}>
@@ -2255,8 +2330,8 @@ export default function App() {
               <div style={{ ...theme.font.label, color: theme.text.secondary, display: "flex", flexWrap: "wrap", gap: "8px 16px", padding: "8px 0" }}>
                 <span>ラウンド数: {g.round}</span>
                 <span>崩壊回数: {g.collapses}</span>
-                <span>出札枚数: {g.p.played}</span>
-                <span>捨札枚数: {g.p.disc}</span>
+                <span>出札枚数: {g.plays}</span>
+                <span>直近の捨て札: {(g.pile ?? []).length}</span>
               </div>
             ) : null}
             {g.log.length > 0 ? (
